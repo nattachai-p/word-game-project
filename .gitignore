@@ -1,0 +1,14 @@
+# Dependency
+node_modules/
+
+# Environment Variables (ความลับห้ามขึ้น Git!)
+.env
+.env.local
+
+# Build Output
+dist/
+build/
+
+# IDE files
+.vscode/
+.DS_Store

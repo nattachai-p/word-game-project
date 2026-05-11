@@ -3,6 +3,9 @@ import express from 'express';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';
 import wordRoutes from './routes/wordRoutes.js';
+import categoryRoute from './routes/categoryRoute.js'; // นำเข้า route สำหรับดึงหมวดหมู่
+
+
 
 const app = express();
 
@@ -13,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use('/api', userRoutes);         // จัดการระบบ Auth
 app.use('/api/words', wordRoutes);   // จัดการระบบคำศัพท์
+app.use('/api/categories', categoryRoute); // เพิ่ม route สำหรับดึงหมวดหมู่
 
 const PORT = process.env.PORT || 8080;
 

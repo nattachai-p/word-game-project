@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import GamePage from './pages/GamePage'; // 1. Import หน้าเกมเข้ามา
 
 function App() {
   return (
@@ -14,7 +15,7 @@ function App() {
         <Route path="/register" element={<RegisterPage />} />
         
         {/* หน้าเกมในอนาคต */}
-        <Route path="/game" element={<div className="text-white text-center mt-20 text-4xl font-bold">GAME STAGE COMING SOON...</div>} />
+        <Route path="/game" element={<GamePage />} />
       </Routes>
     </Router>
   );

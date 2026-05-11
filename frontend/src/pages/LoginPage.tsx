@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, ArrowRight, Loader2 } from 'lucide-react'; // ลบ Command ออกเพราะไปอยู่ใน Logo แล้ว
+import { User, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import api from '../api/axios'; 
 import { useNavigate } from 'react-router-dom';
-import Logo from '../components/Logo'; // 1. Import Logo เข้ามา
+import Logo from '../components/Logo';
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -12,7 +12,10 @@ const LoginPage = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  const handleLogin = async (e?: React.FormEvent) => {
+    // ป้องกันการรีโหลดหน้าเว็บเมื่อกด Enter
+    if (e) e.preventDefault();
+
     if (!username || !password) {
       setError('Identity and Credential are required.');
       return;
@@ -37,7 +40,6 @@ const LoginPage = () => {
         animate={{ opacity: 1, y: 0 }} 
         className="w-full max-w-[400px] z-10"
       >
-        {/* 2. เรียกใช้ Component Logo แทนก้อน div เดิม */}
         <Logo />
 
         <div className="space-y-4">
@@ -54,7 +56,8 @@ const LoginPage = () => {
             )}
           </AnimatePresence>
 
-          <div className="space-y-4">
+          {/* แก้ไขเป็น Tag <form> เพื่อให้กด Enter ได้ */}
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold ml-1 text-left block">
                 Identity
@@ -64,7 +67,7 @@ const LoginPage = () => {
                 <input 
                   type="text" 
                   placeholder="Username" 
-                  className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all" 
+                  className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" 
                   value={username} 
                   onChange={(e) => setUsername(e.target.value)} 
                 />
@@ -80,15 +83,16 @@ const LoginPage = () => {
                 <input 
                   type="password" 
                   placeholder="Password" 
-                  className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all" 
+                  className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all text-white" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
                 />
               </div>
             </div>
 
+            {/* เพิ่ม type="submit" และถอด onClick ออก */}
             <motion.button 
-              onClick={handleLogin} 
+              type="submit"
               disabled={loading} 
               whileHover={{ scale: 1.01, backgroundColor: "#fff", color: "#000" }} 
               whileTap={{ scale: 0.99 }} 
@@ -96,13 +100,14 @@ const LoginPage = () => {
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
-          </div>
+          </form>
         </div>
 
         <div className="mt-10 text-center">
           <p className="text-xs text-slate-600">
             Don't have an account? 
             <button 
+              type="button"
               onClick={() => navigate('/register')} 
               className="text-slate-400 hover:text-white ml-2 underline underline-offset-4 decoration-white/10 transition-colors"
             >

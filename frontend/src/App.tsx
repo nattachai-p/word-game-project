@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import GamePage from './pages/GamePage'; // 1. Import หน้าเกมเข้ามา
+import AdminSettings from './pages/AdminSettings'; // 2. Import หน้า Admin Settings เข้ามา
 
 function App() {
   return (
@@ -16,6 +17,8 @@ function App() {
         
         {/* หน้าเกมในอนาคต */}
         <Route path="/game" element={<GamePage />} />
+        {/* หน้าตั้งค่า Admin */}
+        <Route path="/admin" element={<AdminSettings />} />
       </Routes>
     </Router>
   );

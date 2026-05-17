@@ -19,3 +19,12 @@ export const authenticateToken = (req: any, res: Response, next: NextFunction) =
     next();
   });
 };
+
+export const isAdmin = (req: any, res: Response, next: NextFunction) => {
+  // ตรวจสอบว่ามี user ใน request ไหม และ role เป็น admin หรือเปล่า
+  if (req.user && req.user.role === 'admin') {
+    next(); // ถ้าเป็น admin จริง ก็ให้ไปต่อได้
+  } else {
+    return res.status(403).json({ message: 'สงวนสิทธิ์เฉพาะผู้ดูแลระบบเท่านั้น (Admin only)' });
+  }
+};

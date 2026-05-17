@@ -13,25 +13,36 @@ const LoginPage = () => {
   const navigate = useNavigate();
 
   const handleLogin = async (e?: React.FormEvent) => {
-    // ป้องกันการรีโหลดหน้าเว็บเมื่อกด Enter
-    if (e) e.preventDefault();
+  if (e) e.preventDefault();
+  if (!username || !password) {
+    setError('Identity and Credential are required.');
+    return;
+  }
+  setLoading(true);
+  setError('');
 
-    if (!username || !password) {
-      setError('Identity and Credential are required.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    try {
-      const response = await api.post('/login', { username, password });
-      localStorage.setItem('token', response.data.token);
+  try {
+    const response = await api.post('/login', { username, password });
+    
+    // 1. เก็บ Token และ Role ลงใน localStorage
+    localStorage.setItem('token', response.data.token);
+    localStorage.setItem('role', response.data.role); // เก็บค่า 'admin' หรือ 'user'
+
+    // 2. เช็ค Role เพื่อเลือกหน้าที่จะไป (Redirect Logic)
+    if (response.data.role === 'admin') {
+      // ถ้าเป็น Admin ให้ไปหน้าจัดการ (เดี๋ยวเราจะสร้างหน้านี้ใน step ถัดไป)
       navigate('/game'); 
-    } catch (err: any) {
-      setError(err.response?.data?.message || "Connection failed.");
-    } finally {
-      setLoading(false);
+    } else {
+      // ถ้าเป็น User ทั่วไป ให้ไปหน้าเล่นเกม
+      navigate('/game');
     }
-  };
+
+  } catch (err: any) {
+    setError(err.response?.data?.message || "Connection failed.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-[#050505] text-slate-200 flex items-center justify-center p-6 font-['Inter'] relative overflow-hidden">

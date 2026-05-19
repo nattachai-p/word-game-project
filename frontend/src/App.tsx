@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import GamePage from './pages/GamePage'; // 1. Import หน้าเกมเข้ามา
-import AdminSettings from './pages/AdminSettings'; // 2. Import หน้า Admin Settings เข้ามา
+import AdminUsers from './pages/AdminUsers'; // 2. Import หน้า Admin Settings เข้ามา
+import AdminWordDB from './pages/AdminWordDB'; // 3. Import หน้า Admin Word Database เข้ามา
+
 
 function App() {
   return (
@@ -18,7 +20,9 @@ function App() {
         {/* หน้าเกมในอนาคต */}
         <Route path="/game" element={<GamePage />} />
         {/* หน้าตั้งค่า Admin */}
-        <Route path="/admin" element={<AdminSettings />} />
+        <Route path="/admin/users" element={<AdminUsers />} />
+        {/* หน้าฐานข้อมูลคำศัพท์ Admin */}
+        <Route path="/admin/word-db" element={<AdminWordDB />} />
       </Routes>
     </Router>
   );

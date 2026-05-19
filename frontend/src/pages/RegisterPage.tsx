@@ -1,18 +1,19 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Lock, ArrowRight, Loader2 } from 'lucide-react'; // ลบ Command ออกเพราะไปอยู่ใน Logo แล้ว
+import { User, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
-import Logo from '../components/Logo'; // 1. Import Logo เข้ามา
+import Logo from '../components/Logo';
 
-const LoginPage = () => {
+const RegisterPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async () => {
+  // แก้ชื่อฟังก์ชันเป็น handleRegister
+  const handleRegister = async () => {
     if (!username || !password) {
       setError('Identity and Credential are required.');
       return;
@@ -20,11 +21,14 @@ const LoginPage = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:8080/api/login', { username, password });
-      localStorage.setItem('token', response.data.token);
-      navigate('/game'); 
+      // 1. แก้ URL ให้ยิงไปที่ /api/register
+      await axios.post('http://localhost:8080/api/register', { username, password });
+      
+      // 2. สมัครเสร็จปุ๊บ ให้เด้งกลับไปหน้า Login เพื่อให้ผู้ใช้เข้าสู่ระบบ
+      alert('Registration successful! Please login.');
+      navigate('/login'); 
     } catch (err: any) {
-      setError(err.response?.data?.message || "Connection failed.");
+      setError(err.response?.data?.error || "Registration failed. Username might be taken.");
     } finally {
       setLoading(false);
     }
@@ -37,7 +41,6 @@ const LoginPage = () => {
         animate={{ opacity: 1, y: 0 }} 
         className="w-full max-w-[400px] z-10"
       >
-        {/* 2. เรียกใช้ Component Logo แทนก้อน div เดิม */}
         <Logo />
 
         <div className="space-y-4">
@@ -57,13 +60,13 @@ const LoginPage = () => {
           <div className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold ml-1 text-left block">
-                Identity
+                Choose Identity
               </label>
               <div className="group relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
                 <input 
                   type="text" 
-                  placeholder="Username" 
+                  placeholder="New Username" 
                   className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all" 
                   value={username} 
                   onChange={(e) => setUsername(e.target.value)} 
@@ -73,13 +76,13 @@ const LoginPage = () => {
 
             <div className="space-y-1">
               <label className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold ml-1 text-left block">
-                Credential
+                Create Credential
               </label>
               <div className="group relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 w-4 h-4" />
                 <input 
                   type="password" 
-                  placeholder="Password" 
+                  placeholder="New Password" 
                   className="w-full bg-[#111] border border-white/5 rounded-xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-white/20 transition-all" 
                   value={password} 
                   onChange={(e) => setPassword(e.target.value)} 
@@ -88,25 +91,26 @@ const LoginPage = () => {
             </div>
 
             <motion.button 
-              onClick={handleLogin} 
+              onClick={handleRegister} 
               disabled={loading} 
               whileHover={{ scale: 1.01, backgroundColor: "#fff", color: "#000" }} 
               whileTap={{ scale: 0.99 }} 
               className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all disabled:opacity-50"
             >
-              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
           </div>
         </div>
 
         <div className="mt-10 text-center">
           <p className="text-xs text-slate-600">
-            Don't have an account? 
+            Already an agent? 
+            {/* 3. เปลี่ยนปุ่มให้ลิงก์กลับไปหน้า Login */}
             <button 
-              onClick={() => navigate('/register')} 
+              onClick={() => navigate('/login')} 
               className="text-slate-400 hover:text-white ml-2 underline underline-offset-4 decoration-white/10 transition-colors"
             >
-              Create one now
+              Login here
             </button>
           </p>
         </div>
@@ -121,4 +125,4 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default RegisterPage; // 4. เปลี่ยนชื่อ Export ให้ตรง

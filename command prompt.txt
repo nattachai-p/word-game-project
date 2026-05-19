@@ -1,0 +1,11 @@
+// start service
+npm run dev
+
+// check model 
+npx tsx check-models.ts
+
+// put code to github 
+git status
+git add .
+git commit -m "feat: update ..."
+git push

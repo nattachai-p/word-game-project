@@ -2,11 +2,14 @@ import express, { Request, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
+import { authenticateToken, isAdmin } from '../middleware/auth.js'; // หรือ .ts ขึ้นอยู่กับ config ของกัปตัน
+
+
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
-// API สมัครสมาชิก
+// 1. API สมัครสมาชิก
 router.post('/register', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   try {
@@ -24,7 +27,7 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-// API สำหรับ Login 
+// 2. API สำหรับ Login 
 router.post('/login', async (req: Request, res: Response) => {
   const { username, password } = req.body;
   try {
@@ -35,14 +38,12 @@ router.post('/login', async (req: Request, res: Response) => {
       return res.status(400).json({ message: 'Invalid username or password' });
     }
 
-    // สร้าง Token โดยฝัง userId และ role ไว้ข้างใน
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
 
-    // ส่งข้อมูลกลับ: แยก token และ role ออกมาให้ชัดเจน
     res.json({
       message: 'Login successful',
       token,
-      role: user.role, // ส่ง role ออกมาตรงๆ เพื่อให้ Frontend เช็คได้ทันที
+      role: user.role,
       user: { id: user.id, username: user.username } 
     });
   } catch (err) {
@@ -50,12 +51,10 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// API สำหรับดึงข้อมูลผู้ใช้ทั้งหมด 
-// ดึงข้อมูล User ทั้งหมด (เฉพาะ Admin)
-// หมายเหตุ: ถ้าคุณทำ middleware authenticateToken กับ isAdmin เสร็จแล้วให้เอามาใส่ตรงกลางด้วยนะครับ
-router.get('/users', async (req: Request, res: Response) => {
+// 3. API สำหรับดึงข้อมูลผู้ใช้ทั้งหมด
+router.get('/users', authenticateToken, isAdmin, async (req: Request, res: Response) => {
+ 
   try {
-    // ดึงข้อมูลที่จำเป็นมาโชว์ (ไม่ดึง password_hash มาเพื่อความปลอดภัย)
     const result = await query(
       'SELECT id, username, role, total_points FROM users ORDER BY id ASC'
     );
@@ -66,40 +65,50 @@ router.get('/users', async (req: Request, res: Response) => {
   }
 });
 
-// api สำหรับลบ User รายบุคคล
-// อัปเดตข้อมูล User รายบุคคล
-router.put('/update-user/:id', async (req: Request, res: Response) => {
+// 4. API สำหรับแก้ไขผู้ใช้ (✅ แก้ Bug เรียบร้อย)
+router.put('/update-user/:id', authenticateToken, isAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  const { username, role, total_points, password } = req.body;
-  
-  try {
-    let updateQuery = 'UPDATE users SET username = $1, role = $2, total_points = $3';
-    let params = [username, role, total_points, id];
+  const { username, role, total_points, new_password } = req.body; 
 
-    // ถ้ามีการส่ง password ใหม่มาด้วย ให้ hash แล้วอัปเดตเข้าไปด้วย
-    if (password && password.trim() !== "") {
-      const hashedPassword = await bcrypt.hash(password, 10);
-      updateQuery = 'UPDATE users SET username = $1, role = $2, total_points = $3, password_hash = $4 WHERE id = $5';
-      params = [username, role, total_points, hashedPassword, id];
+  try {
+    let queryText: string;
+    let queryParams: any[];
+
+    if (new_password && new_password.trim() !== "") {
+      console.log("Detecting new password, hashing...");
+      const hashedPassword = await bcrypt.hash(new_password, 10);
+      
+      // ✅ แก้ไขชื่อคอลัมน์เป็น password_hash ให้ตรงกับ DB
+      queryText = `
+        UPDATE users 
+        SET username = $1, role = $2, total_points = $3, password_hash = $4 
+        WHERE id = $5
+      `;
+      queryParams = [username, role, total_points, hashedPassword, id];
     } else {
-      updateQuery += ' WHERE id = $4';
+      console.log("No new password provided, keeping old one.");
+      queryText = `
+        UPDATE users 
+        SET username = $1, role = $2, total_points = $3 
+        WHERE id = $4
+      `;
+      queryParams = [username, role, total_points, id];
     }
 
-    await query(updateQuery, params);
+    // ✅ เปลี่ยนจาก pool.query เป็น query ตามที่ import ไว้ด้านบนสุด
+    await query(queryText, queryParams);
     res.json({ message: 'User updated successfully' });
+
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Update failed' });
+    res.status(500).json({ error: 'Failed to update user' });
   }
 });
 
-// 2. API สำหรับลบผู้ใช้ (Remove User)
-router.delete('/delete-user/:id', async (req: Request, res: Response) => {
+// 5. API สำหรับลบผู้ใช้
+router.delete('/delete-user/:id', authenticateToken, isAdmin, async (req: Request, res: Response) => {
   const { id } = req.params;
-  
   try {
-    // ป้องกันการลบ Admin (เลือกเช็คจาก ID หรือ Username ก็ได้)
-    // หรือเช็คว่าห้ามลบตัวเอง (ถ้าเรามีระบบตรวจสอบ Token)
     await query('DELETE FROM users WHERE id = $1', [id]);
     res.json({ message: 'ลบผู้ใช้สำเร็จ' });
   } catch (err) {
@@ -108,5 +117,23 @@ router.delete('/delete-user/:id', async (req: Request, res: Response) => {
   }
 });
 
+// API สำหรับดึงข้อมูลตัวเอง (เช็คจาก Token)
+router.get('/me', authenticateToken, async (req: any, res: Response) => {
+  try {
+    const result = await query(
+      'SELECT id, username, role, total_points FROM users WHERE id = $1',
+      [req.user.userId] // ดึง userId มาจาก token ที่ถูกถอดรหัสแล้วใน auth.ts
+    );
+    
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+    
+    res.json(result.rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Failed to fetch profile' });
+  }
+});
 
 export default router;

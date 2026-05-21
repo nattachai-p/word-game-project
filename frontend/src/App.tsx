@@ -4,6 +4,8 @@ import RegisterPage from './pages/RegisterPage';
 import GamePage from './pages/GamePage'; // 1. Import หน้าเกมเข้ามา
 import AdminUsers from './pages/AdminUsers'; // 2. Import หน้า Admin Settings เข้ามา
 import AdminWordDB from './pages/AdminWordDB'; // 3. Import หน้า Admin Word Database เข้ามา
+import Dashboard from './pages/Dashboard';
+
 
 
 function App() {
@@ -23,6 +25,9 @@ function App() {
         <Route path="/admin/users" element={<AdminUsers />} />
         {/* หน้าฐานข้อมูลคำศัพท์ Admin */}
         <Route path="/admin/word-db" element={<AdminWordDB />} />
+        {/* หน้า Dashboard */}
+        <Route path="/dashboard" element={<Dashboard />} />
+
       </Routes>
     </Router>
   );

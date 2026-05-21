@@ -18,7 +18,7 @@ router.post('/analyze-word', async (req: Request, res: Response) => {
   const { word } = req.body;
   try {
     // ✅ เปลี่ยนมาใช้ 'gemini-pro' ที่รองรับ 100% ในทุกเวอร์ชัน
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     const prompt = `Analyze the English word "${word}". Return ONLY a JSON object containing the keys: eng, th_read, th_meaning, example_sentence, example_translation. ${SIMPLE_PROMPT_REQUIREMENT}`;
     
@@ -39,7 +39,7 @@ router.post('/analyze-word', async (req: Request, res: Response) => {
 router.post('/random-words', async (req: Request, res: Response) => {
   const { topic } = req.body;
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
     
     // ✨ ปรับ Prompt ใหม่: ถ้าไม่มี topic ส่งมา ให้สุ่มแบบครอบจักรวาล
     const topicInstruction = topic && topic.trim() !== "" 

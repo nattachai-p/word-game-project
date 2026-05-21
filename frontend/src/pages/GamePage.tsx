@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon } from 'lucide-react';
-import api from '../api/axios'; // ให้แน่ใจว่า import api ถูกต้อง
+import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb } from 'lucide-react';
+import api from '../api/axios';
 import Logo from '../components/Logo';
-import Sidebar from '../components/Sidebar'; // ✅ ดึง Sidebar เข้ามา
+import Sidebar from '../components/Sidebar';
 
-// ✅ Logic การใบ้คำ (คงเดิม)
+// ✅ Logic การใบ้คำ
 const generateHint = (word: string, level: string, settings: any) => {
   if (!word) return "";
   if (level === 'Hard') return word.replace(/[a-zA-Z]/g, "_");
@@ -24,7 +24,7 @@ const GamePage = () => {
   const navigate = useNavigate();
 
   // --- States ---
-  const [user, setUser] = useState<any>(null); // ✅ เก็บข้อมูล Profile & Role
+  const [user, setUser] = useState<any>(null);
   const [step, setStep] = useState<'select' | 'playing' | 'result'>('select');
   const [categories, setCategories] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
@@ -32,45 +32,50 @@ const GamePage = () => {
   const [words, setWords] = useState<any[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [userInput, setUserInput] = useState('');
-  const [score, setScore] = useState(0);
+  const [score, setScore] = useState(0); // คะแนนของรอบนี้
   const [maskedWord, setMaskedWord] = useState('');
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
   const [showExample, setShowExample] = useState(false);
+  const [isRevealed, setIsRevealed] = useState(false);
 
-  // ✅ 1. ตรวจสอบ Token และดึงข้อมูล User + Role
+  const nextBtnRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (showExample && nextBtnRef.current) {
+      nextBtnRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      nextBtnRef.current.focus();
+    }
+  }, [showExample]);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem('token');
         if (!token) return navigate('/login');
-
-        // อย่าลืมสร้าง route /me ใน backend นะครับ
         const res = await api.get('/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         setUser(res.data);
       } catch (err) {
-        console.error("Auth failed");
         navigate('/login');
       }
     };
     fetchProfile();
   }, [navigate]);
 
-  // ✅ 2. ดึง Categories จาก Database (คงเดิม)
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const res = await api.get('/categories');
         setCategories(res.data);
       } catch (err) {
-        setCategories(['Vocabulary', 'Verb', 'Idiom']); // Fallback
+        setCategories(['Vocabulary', 'Verb', 'Idiom']);
       }
     };
     fetchCategories();
   }, []);
 
-  // --- Functions (คงเดิม) ---
+  // --- Functions ---
   const startStore = async () => {
     try {
       const url = selectedCategory === 'ALL' ? '/words/random' : `/words/random?category=${selectedCategory}`;
@@ -84,6 +89,7 @@ const GamePage = () => {
       setUserInput('');
       setFeedback('none');
       setShowExample(false);
+      setIsRevealed(false);
       prepareWord(res.data[0], level);
     } catch (err) { alert("Server Error"); }
   };
@@ -91,6 +97,28 @@ const GamePage = () => {
   const prepareWord = (wordObj: any, currentLevel: string) => {
     const settings = { lv1: 0.6, lv2: 0.3 }; 
     setMaskedWord(generateHint(wordObj.eng, currentLevel, settings));
+  };
+
+  // ✅ ฟังก์ชันอัปเดตคะแนนลง Database ทันทีที่เล่นแต่ละข้อ
+  const syncPoints = async (pointsChange: number) => {
+    setScore(prev => prev + pointsChange); // อัปเดตคะแนนรอบนี้บนจอ
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await api.post('/update-points', // 🚀 ยิงไป API ตัวใหม่
+        { points: pointsChange },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (res.data && res.data.updatedUser) {
+        setUser((prevUser: any) => ({
+          ...prevUser,
+          total_points: res.data.updatedUser.total_points // อัปเดตแต้มรวมบนจอให้ตรง DB ทันที
+        }));
+      }
+    } catch (err) {
+      console.error("Auto-save คะแนนล้มเหลว:", err);
+    }
   };
 
   const checkAnswer = (e: React.FormEvent) => {
@@ -101,48 +129,55 @@ const GamePage = () => {
 
     if (isMatch) {
       setFeedback('correct');
-      setScore(prev => prev + 10);
+      syncPoints(10); // 🚀 ตอบถูก ยิงเซฟ +10
       setTimeout(() => {
         setFeedback('none');
         setShowExample(true);
       }, 1200);
     } else {
       setFeedback('wrong');
-      setScore(prev => Math.max(0, prev - 5)); 
+      syncPoints(-5); // 🚀 ตอบผิด ยิงเซฟ -5
       setTimeout(() => setFeedback('none'), 1000);
     }
   };
 
   const handleSkip = () => {
     if (showExample) return;
-    setScore(prev => Math.max(0, prev - 2)); 
+    syncPoints(-2); // 🚀 กดข้าม ยิงเซฟ -2
     nextWord();
   };
 
-  const nextWord = () => {
+  const handleRevealAnswer = () => {
+    if (showExample) return;
+    setMaskedWord(words[currentIndex].eng);
+    setIsRevealed(true);
+    setShowExample(true);
+  };
+
+  const nextWord = async () => {
     setFeedback('none');
     setShowExample(false);
+    setIsRevealed(false); 
     setUserInput('');
+    
     if (currentIndex < words.length - 1) {
       const nextIdx = currentIndex + 1;
       setCurrentIndex(nextIdx);
       prepareWord(words[nextIdx], level);
     } else {
+      // 🚀 เล่นจบไปหน้า Result เลย ไม่ต้องยิงเซฟคะแนนอีกรอบแล้ว
       setStep('result');
     }
   };
 
-  // ✅ ป้องกันจอขาวระหว่างโหลดข้อมูล User
   if (!user) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white font-['Inter']">Loading Data...</div>;
 
   return (
-    // ✅ Main Layout: แบ่งหน้าจอซ้าย-ขวา
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
       
-      {/* ✅ Sidebar จะโผล่มาเฉพาะเมื่อ role === 'admin' */}
-      {user.role === 'admin' && <Sidebar />}
+      {/* ✅ เปิดให้ทุกคนเห็น Sidebar และบังคับย่อ */}
+      <Sidebar role={user.role} initialCollapsed={true} />
 
-      {/* ✅ พื้นที่เล่นเกม (Flex-1 กินพื้นที่ที่เหลือ) */}
       <main className={`flex-1 relative transition-colors duration-500 overflow-hidden flex flex-col items-center justify-center
         ${step !== 'select' && feedback === 'wrong' ? 'bg-red-950' : ''}
         ${step !== 'select' && feedback === 'correct' ? 'bg-green-950' : ''}
@@ -151,8 +186,6 @@ const GamePage = () => {
         {/* ----------------- STEP: SELECT ----------------- */}
         {step === 'select' && (
           <div className="flex flex-col items-center p-6 text-center w-full max-w-4xl">
-            
-            {/* Header แสดงชื่อและแต้มของ User */}
             <div className="w-full flex justify-between items-center mb-10 border-b border-white/5 pb-6">
               <Logo />
               <div className="flex items-center gap-4 text-right">
@@ -170,20 +203,9 @@ const GamePage = () => {
               <section>
                 <p className="text-indigo-500 text-[10px] tracking-[0.4em] uppercase font-black mb-6">Category Selection</p>
                 <div className="flex flex-wrap justify-center gap-3">
-                  <button 
-                    onClick={() => setSelectedCategory('ALL')} 
-                    className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === 'ALL' ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:text-white'}`}
-                  >
-                    ALL
-                  </button>
+                  <button onClick={() => setSelectedCategory('ALL')} className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === 'ALL' ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>ALL</button>
                   {categories.map(c => (
-                    <button 
-                      key={c} 
-                      onClick={() => setSelectedCategory(c)} 
-                      className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === c ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:border-white/30'}`}
-                    >
-                      {c}
-                    </button>
+                    <button key={c} onClick={() => setSelectedCategory(c)} className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === c ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:border-white/30'}`}>{c}</button>
                   ))}
                 </div>
               </section>
@@ -211,7 +233,6 @@ const GamePage = () => {
         {step !== 'select' && (
           <div className="w-full h-full flex flex-col items-center p-6 pt-12 relative">
             
-            {/* Feedback Animation (Correct/Wrong) */}
             <AnimatePresence>
               {feedback !== 'none' && (
                 <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.2 }} className={`absolute inset-0 flex flex-col items-center justify-center pointer-events-none z-50 backdrop-blur-sm ${feedback === 'correct' ? 'bg-green-950/90' : 'bg-red-950/90'}`}>
@@ -226,9 +247,19 @@ const GamePage = () => {
             <div className="w-full max-w-4xl z-10 flex-1 flex flex-col">
               <div className="flex justify-between items-end mb-20 text-white">
                 <div className="scale-75 origin-left"><Logo /></div>
-                <div className="text-right">
-                  <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Score</p>
-                  <p className={`text-4xl font-black transition-all ${feedback === 'wrong' ? 'text-red-500 scale-110' : 'text-white'}`}>{score}</p>
+                
+                {/* ✅ โชว์คะแนนรวม (DB) และคะแนนรอบนี้แยกกัน */}
+                <div className="flex gap-8 text-right">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-indigo-500 font-bold">Total Points</p>
+                    <p className="text-2xl font-black text-slate-300">{user.total_points}</p>
+                  </div>
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Round Score</p>
+                    <p className={`text-4xl font-black transition-all ${feedback === 'wrong' ? 'text-red-500 scale-110' : feedback === 'correct' ? 'text-green-400 scale-110' : 'text-white'}`}>
+                      {score > 0 ? `+${score}` : score}
+                    </p>
+                  </div>
                 </div>
               </div>
 
@@ -240,24 +271,37 @@ const GamePage = () => {
                     <p className="text-5xl text-slate-500 font-light italic">{words[currentIndex]?.th_meaning}</p>
                     
                     {!showExample && (
-                      <button 
-                        onClick={handleSkip}
-                        className="absolute -right-12 top-0 p-4 text-slate-700 hover:text-white transition-colors group flex flex-col items-center gap-2"
-                        title="Skip Word (-2 pts)"
-                      >
-                        <RefreshCcw className="w-6 h-6 group-hover:rotate-180 transition-transform duration-500" />
-                        <span className="text-[9px] font-bold uppercase tracking-tighter opacity-0 group-hover:opacity-100">-2 PTS</span>
-                      </button>
+                      <div className="absolute -right-20 top-0 flex flex-col gap-4">
+                        <button onClick={handleSkip} className="p-3 text-slate-700 hover:text-white transition-colors group flex flex-col items-center gap-1" title="Skip Word (-2 pts)">
+                          <RefreshCcw className="w-5 h-5 group-hover:rotate-180 transition-transform duration-500" />
+                          <span className="text-[8px] font-bold text-red-500 uppercase tracking-tighter opacity-0 group-hover:opacity-100">-2 PTS</span>
+                        </button>
+                        <button onClick={handleRevealAnswer} className="p-3 text-slate-700 hover:text-amber-400 transition-colors group flex flex-col items-center gap-1" title="Reveal & Learn (0 pts)">
+                          <Lightbulb className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                          <span className="text-[8px] font-bold text-amber-400 uppercase tracking-tighter opacity-0 group-hover:opacity-100">LEARN</span>
+                        </button>
+                      </div>
                     )}
                   </div>
 
                   <AnimatePresence>
                     {showExample && (
                       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl mx-auto bg-white/[0.03] p-10 rounded-[40px] border border-indigo-500/30 backdrop-blur-xl">
-                        <p className="text-indigo-400 mb-6 uppercase tracking-[0.2em] text-xs font-bold"><CheckCircle2 className="inline w-4 h-4 mr-2" /> Correct Answer!</p>
+                        
+                        <p className="mb-6 uppercase tracking-[0.2em] text-xs font-bold">
+                          {isRevealed ? (
+                            <span className="text-amber-400 flex items-center justify-center gap-2"><Lightbulb className="w-4 h-4" /> Study Mode: Word Revealed</span>
+                          ) : (
+                            <span className="text-green-400 flex items-center justify-center gap-2"><CheckCircle2 className="w-4 h-4" /> Correct Answer!</span>
+                          )}
+                        </p>
+
                         <p className="text-2xl font-medium text-white mb-3 italic">"{words[currentIndex]?.example_sentence}"</p>
                         <p className="text-lg text-slate-400 mb-10">{words[currentIndex]?.example_translation}</p>
-                        <button onClick={nextWord} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all">Next Word <ArrowRight className="inline w-5 h-5 ml-2" /></button>
+                        
+                        <button ref={nextBtnRef} onClick={nextWord} className="bg-white text-black px-12 py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-indigo-500 hover:text-white transition-all">
+                          {isRevealed ? "Skip to Next" : "Next Word"} <ArrowRight className="inline w-5 h-5 ml-2" />
+                        </button>
                       </motion.div>
                     )}
                   </AnimatePresence>
@@ -282,7 +326,7 @@ const GamePage = () => {
                 <div className="text-center py-24 bg-white/[0.02] rounded-[60px] border border-white/5 backdrop-blur-sm m-auto w-full">
                   <Trophy className="w-24 h-24 text-yellow-500 mx-auto mb-8" />
                   <h2 className="text-6xl font-black text-white mb-4 uppercase italic tracking-tighter">Mission Clear</h2>
-                  <p className="text-2xl text-slate-400 mb-12">Final Score: <span className="text-white font-bold">{score}</span></p>
+                  <p className="text-2xl text-slate-400 mb-12">Final Round Score: <span className="text-white font-bold">{score}</span></p>
                   <button onClick={() => setStep('select')} className="bg-white text-black px-14 py-6 rounded-2xl font-black uppercase tracking-widest hover:bg-slate-200 transition-all">Restart Session</button>
                 </div>
               )}

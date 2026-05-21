@@ -136,4 +136,89 @@ router.get('/me', authenticateToken, async (req: any, res: Response) => {
   }
 });
 
+// API สำหรับอัปเดตคะแนนของผู้เล่น (บวกเพิ่มจากแต้มเดิมที่มี)
+router.post('/add-points', authenticateToken, async (req: any, res: Response) => {
+  const { points } = req.body; // รับคะแนนที่ได้จากหน้าบ้าน
+
+  // เช็คก่อนว่าคะแนนที่ส่งมาเป็นตัวเลขที่ถูกต้องไหม
+  if (typeof points !== 'number' || points < 0) {
+    return res.status(400).json({ message: 'คะแนนไม่ถูกต้อง' });
+  }
+
+  try {
+    // ใช้ userId จาก Token ที่ถอดรหัสแล้วใน Middleware
+    const userId = req.user.userId;
+
+    // ✨ คำสั่ง SQL: บวกแต้มเพิ่มเข้ากับ total_points เดิม
+    const result = await query(
+      `UPDATE users 
+       SET total_points = total_points + $1 
+       WHERE id = $2 
+       RETURNING id, username, total_points`,
+      [points, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'ไม่พบผู้ใช้ในระบบ' });
+    }
+
+    res.json({
+      message: 'บันทึกคะแนนสำเร็จ! 🏆',
+      updatedUser: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Update points error:', err);
+    res.status(500).json({ error: 'Failed to update points' });
+  }
+});
+
+// ✅ API ดึงข้อมูล Leaderboard (เรียงลำดับจากคะแนนมากไปน้อย Top 10)
+router.get('/leaderboard', async (req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT id, username, total_points 
+       FROM users 
+       ORDER BY total_points DESC 
+       LIMIT 10`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('Fetch leaderboard error:', err);
+    res.status(500).json({ error: 'Failed to fetch leaderboard' });
+  }
+});
+
+// ✅ เปลี่ยนชื่อเป็น /update-points ให้ครอบคลุมทั้งบวกและลบ
+router.post('/update-points', authenticateToken, async (req: any, res: Response) => {
+  const { points } = req.body;
+
+  if (typeof points !== 'number') {
+    return res.status(400).json({ message: 'คะแนนไม่ถูกต้อง' });
+  }
+
+  try {
+    const userId = req.user.userId;
+
+    const result = await query(
+      `UPDATE users 
+       SET total_points = GREATEST(0, total_points + $1) 
+       WHERE id = $2 
+       RETURNING id, username, total_points`,
+      [points, userId]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({ message: 'ไม่พบผู้ใช้ในระบบ' });
+    }
+
+    res.json({
+      message: 'อัปเดตคะแนนเรียลไทม์สำเร็จ!',
+      updatedUser: result.rows[0]
+    });
+  } catch (err) {
+    console.error('Update points error:', err);
+    res.status(500).json({ error: 'Failed to update points' });
+  }
+});
+
 export default router;

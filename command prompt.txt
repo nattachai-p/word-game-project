@@ -1,11 +1,20 @@
 // start service
 npm run dev
 
-// check model 
+// check model
 npx tsx check-models.ts
 
-// put code to github 
+// put code to github
 git status
 git add .
 git commit -m "feat: update ..."
 git push
+
+// pull code from github
+git pull
+
+cd backend
+npm install
+
+cd ../frontend
+npm install

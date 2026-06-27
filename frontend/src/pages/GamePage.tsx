@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb } from 'lucide-react';
+import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb, Clock } from 'lucide-react';
 import api from '../api/axios';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
@@ -37,6 +37,10 @@ const GamePage = () => {
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
   const [showExample, setShowExample] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+  
+  // Timer States
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [isTiming, setIsTiming] = useState(false);
 
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -62,6 +66,17 @@ const GamePage = () => {
     };
     fetchProfile();
   }, [navigate]);
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval>;
+    if (isTiming) {
+      const startTimeMs = Date.now() - timeElapsed * 1000;
+      interval = setInterval(() => {
+        setTimeElapsed((Date.now() - startTimeMs) / 1000);
+      }, 100);
+    }
+    return () => clearInterval(interval);
+  }, [isTiming]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -90,6 +105,8 @@ const GamePage = () => {
       setFeedback('none');
       setShowExample(false);
       setIsRevealed(false);
+      setIsTiming(false);
+      setTimeElapsed(0);
       prepareWord(res.data[0], level);
     } catch (err) { alert("Server Error"); }
   };
@@ -129,6 +146,7 @@ const GamePage = () => {
 
     if (isMatch) {
       setFeedback('correct');
+      setIsTiming(false); // Stop the timer when correct
       syncPoints(10); // 🚀 ตอบถูก ยิงเซฟ +10
       setTimeout(() => {
         setFeedback('none');
@@ -159,6 +177,8 @@ const GamePage = () => {
     setShowExample(false);
     setIsRevealed(false); 
     setUserInput('');
+    setIsTiming(false);
+    setTimeElapsed(0);
     
     if (currentIndex < words.length - 1) {
       const nextIdx = currentIndex + 1;
@@ -240,6 +260,11 @@ const GamePage = () => {
                   <p className={`text-4xl font-black uppercase tracking-[0.3em] mt-8 ${feedback === 'correct' ? 'text-green-100' : 'text-red-100'}`}>
                     {feedback === 'correct' ? 'Excellent!' : 'Wrong! (-5 PTS)'}
                   </p>
+                  {feedback === 'correct' && (
+                    <p className="text-xl text-green-200 mt-4 font-bold tracking-widest bg-green-900/50 px-6 py-2 rounded-full border border-green-500/30 flex items-center gap-2">
+                      <Clock className="w-5 h-5" /> TIME: {timeElapsed.toFixed(1)}s
+                    </p>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>
@@ -250,6 +275,14 @@ const GamePage = () => {
                 
                 {/* ✅ โชว์คะแนนรวม (DB) และคะแนนรอบนี้แยกกัน */}
                 <div className="flex gap-8 text-right">
+                  <div>
+                    <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold flex items-center justify-end gap-1">
+                      <Clock className="w-3 h-3" /> Time
+                    </p>
+                    <p className={`text-4xl font-black transition-all ${isTiming ? 'text-white' : 'text-slate-400'}`}>
+                      {timeElapsed.toFixed(1)}s
+                    </p>
+                  </div>
                   <div>
                     <p className="text-[10px] uppercase tracking-widest text-indigo-500 font-bold">Total Points</p>
                     <p className="text-2xl font-black text-slate-300">{user.total_points}</p>
@@ -307,16 +340,55 @@ const GamePage = () => {
                   </AnimatePresence>
 
                   {!showExample && (
-                    <form onSubmit={checkAnswer} className="pt-20 max-w-md mx-auto">
+                    <form onSubmit={checkAnswer} className="pt-20 max-w-2xl mx-auto relative">
+                      {/* Visual Boxes */}
+                      <div className="flex justify-center gap-2 sm:gap-4 relative z-0 pointer-events-none">
+                        {(words[currentIndex]?.eng || '').split('').map((_, i) => {
+                          const char = userInput[i] || '';
+                          const isFocused = userInput.length === i; // The current active box
+                          
+                          let boxBorder = 'border-white/10';
+                          let boxText = 'text-white/30';
+                          
+                          if (feedback === 'wrong') {
+                            boxBorder = 'border-red-500';
+                            boxText = 'text-red-500';
+                          } else if (char) {
+                            boxBorder = 'border-indigo-400';
+                            boxText = 'text-white';
+                          } else if (isFocused) {
+                            boxBorder = 'border-indigo-500 animate-pulse';
+                          }
+
+                          return (
+                            <div 
+                              key={i} 
+                              className={`w-12 h-16 sm:w-16 sm:h-20 border-b-4 flex items-center justify-center text-4xl sm:text-5xl font-black uppercase transition-all ${boxBorder} ${boxText}`}
+                            >
+                              {char}
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Hidden Actual Input */}
                       <input 
                         autoFocus
                         type="text"
                         value={userInput}
-                        onChange={(e) => setUserInput(e.target.value)}
-                        className={`w-full bg-transparent border-b-4 py-4 text-5xl text-center focus:outline-none transition-all font-black tracking-[0.2em] uppercase ${feedback === 'wrong' ? 'border-red-500 text-red-500' : 'border-white/10 text-white focus:border-indigo-500'}`}
-                        placeholder="..."
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!isTiming && !showExample && val.length > 0) setIsTiming(true);
+                          if (val.length <= (words[currentIndex]?.eng || '').length) {
+                            setUserInput(val);
+                          }
+                        }}
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10 focus:outline-none"
                       />
-                      <p className="text-[10px] uppercase tracking-[0.4em] text-slate-700 mt-6">Type and press Enter</p>
+                      
+                      <div className="text-center relative z-0">
+                        <p className="text-[10px] uppercase tracking-[0.4em] text-slate-700 mt-8">Type and press Enter</p>
+                      </div>
                     </form>
                   )}
                 </div>

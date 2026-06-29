@@ -5,6 +5,7 @@ import userRoutes from './routes/userRoutes.js';
 import wordRoutes from './routes/wordRoutes.js';
 import categoryRoute from './routes/categoryRoute.js'; // นำเข้า route สำหรับดึงหมวดหมู่
 import airoutes from './routes/aiRoutes.js'; // นำเข้า route สำหรับ AI
+import focusRoutes from './routes/focusRoutes.js'; // นำเข้า route สำหรับ Focus System
 
 
 const app = express();
@@ -18,6 +19,7 @@ app.use('/api', userRoutes);         // จัดการระบบ Auth
 app.use('/api/words', wordRoutes);   // จัดการระบบคำศัพท์
 app.use('/api/categories', categoryRoute); // เพิ่ม route สำหรับดึงหมวดหมู่
 app.use('/api/ai', airoutes); // เพิ่ม route สำหรับ AI
+app.use('/api/focus', focusRoutes); // เพิ่ม route สำหรับ Focus System
 
 const PORT = process.env.PORT || 8080;
 

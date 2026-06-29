@@ -1,9 +1,11 @@
 import express, { Request, Response } from 'express';
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
 import { query } from '../db.js';
 
 const router = express.Router();
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
+const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "missing_key" });
 
 const SIMPLE_PROMPT_REQUIREMENT = `
 1. eng: English word.
@@ -13,17 +15,37 @@ const SIMPLE_PROMPT_REQUIREMENT = `
 5. example_translation: Thai translation for the sentence.
 `;
 
+// 0. Check Word Exists
+router.get('/check-word/:word', async (req: Request, res: Response) => {
+  try {
+    const word = req.params.word.trim().toLowerCase();
+    const checkExist = await query('SELECT id FROM words WHERE LOWER(eng) = $1', [word]);
+    res.json({ exists: checkExist.rows.length > 0 });
+  } catch (err) {
+    res.status(500).json({ error: "Check failed" });
+  }
+});
+
 // 1. Manual Input
 router.post('/analyze-word', async (req: Request, res: Response) => {
-  const { word } = req.body;
+  const { word, model: aiModel } = req.body;
   try {
-    // ✅ เปลี่ยนมาใช้ 'gemini-pro' ที่รองรับ 100% ในทุกเวอร์ชัน
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
-    
+    const modelName = aiModel || "gemini-3.5-flash";
     const prompt = `Analyze the English word "${word}". Return ONLY a JSON object containing the keys: eng, th_read, th_meaning, example_sentence, example_translation. ${SIMPLE_PROMPT_REQUIREMENT}`;
     
-    const result = await model.generateContent(prompt);
-    let text = result.response.text();
+    let text = "";
+    if (modelName.includes("llama") || modelName.includes("mixtral")) {
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: modelName,
+        temperature: 0.5,
+      });
+      text = chatCompletion.choices[0]?.message?.content || "";
+    } else {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      text = result.response.text();
+    }
     
     // ✅ ท่าไม้ตายล้างคราบ Markdown เผื่อ AI แอบแถม ```json มาให้
     text = text.replace(/```json/g, "").replace(/```/g, "").trim();
@@ -37,9 +59,9 @@ router.post('/analyze-word', async (req: Request, res: Response) => {
 
 // 2. Random AI Topic
 router.post('/random-words', async (req: Request, res: Response) => {
-  const { topic } = req.body;
+  const { topic, model: aiModel } = req.body;
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-3.5-flash" });
+    const modelName = aiModel || "gemini-3.5-flash";
     
     // ✨ ปรับ Prompt ใหม่: ถ้าไม่มี topic ส่งมา ให้สุ่มแบบครอบจักรวาล
     const topicInstruction = topic && topic.trim() !== "" 
@@ -48,8 +70,19 @@ router.post('/random-words', async (req: Request, res: Response) => {
       
     const prompt = `Generate 5 English words ${topicInstruction}. Return ONLY a JSON ARRAY of objects. Each object must have keys: eng, th_read, th_meaning, example_sentence, example_translation. ${SIMPLE_PROMPT_REQUIREMENT}`;
     
-    const result = await model.generateContent(prompt);
-    let text = result.response.text();
+    let text = "";
+    if (modelName.includes("llama") || modelName.includes("mixtral")) {
+      const chatCompletion = await groq.chat.completions.create({
+        messages: [{ role: 'user', content: prompt }],
+        model: modelName,
+        temperature: 0.8, // Slightly higher for random words
+      });
+      text = chatCompletion.choices[0]?.message?.content || "";
+    } else {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      text = result.response.text();
+    }
     
     // ท่าไม้ตายล้างคราบ Markdown
     text = text.replace(/```json/g, "").replace(/```/g, "").trim();

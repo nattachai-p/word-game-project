@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb, Clock } from 'lucide-react';
+import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb, Target, BookOpen, Clock } from 'lucide-react';
 import api from '../api/axios';
 import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
@@ -37,6 +37,8 @@ const GamePage = () => {
   const [feedback, setFeedback] = useState<'none' | 'correct' | 'wrong'>('none');
   const [showExample, setShowExample] = useState(false);
   const [isRevealed, setIsRevealed] = useState(false);
+  const [isFocusMode, setIsFocusMode] = useState(false);  // ✅ โหมด Focus
+  const [focusCount, setFocusCount] = useState(0);         // ✅ จำนวนคำที่ Focus ไว้
   
   // Timer States
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -90,14 +92,33 @@ const GamePage = () => {
     fetchCategories();
   }, []);
 
+  // ✅ ดึงจำนวน Focus เพื่อแสดงใน Select Screen
+  useEffect(() => {
+    const fetchFocusCount = async () => {
+      try {
+        const res = await api.get('/focus');
+        setFocusCount(res.data.focusIds.length);
+      } catch (_) {
+        setFocusCount(0);
+      }
+    };
+    fetchFocusCount();
+  }, []);
+
   // --- Functions ---
   const startStore = async () => {
     try {
       const url = selectedCategory === 'ALL' ? '/words/random' : `/words/random?category=${selectedCategory}`;
       const res = await api.get(url);
-      if (res.data.length === 0) return alert("ไม่พบคำศัพท์ในหมวดนี้!");
+
+      // ✅ Backend ตอบกลับเป็น { words: [...], isFocusMode: bool }
+      const wordList = res.data.words;
+      const focusMode = res.data.isFocusMode ?? false;
+
+      if (!wordList || wordList.length === 0) return alert("ไม่พบคำศัพท์ในหมวดนี้!");
       
-      setWords(res.data);
+      setWords(wordList);
+      setIsFocusMode(focusMode);
       setStep('playing');
       setCurrentIndex(0);
       setScore(0);
@@ -105,9 +126,9 @@ const GamePage = () => {
       setFeedback('none');
       setShowExample(false);
       setIsRevealed(false);
-      setIsTiming(false);
+      setIsTiming(true);
       setTimeElapsed(0);
-      prepareWord(res.data[0], level);
+      prepareWord(wordList[0], level);
     } catch (err) { alert("Server Error"); }
   };
 
@@ -220,6 +241,47 @@ const GamePage = () => {
             </div>
 
             <div className="space-y-12 w-full max-w-2xl mt-4">
+
+              {/* ✅ Focus Mode Info Banner */}
+              {focusCount > 0 ? (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between gap-4 bg-indigo-600/10 border border-indigo-500/30 rounded-2xl px-6 py-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <Target className="w-5 h-5 text-indigo-400 shrink-0" />
+                    <div className="text-left">
+                      <p className="text-indigo-300 font-bold text-sm">Focus Mode Active</p>
+                      <p className="text-indigo-500 text-xs">คุณมี {focusCount} คำที่ Focus ไว้ — เกมจะสุ่มเฉพาะคำเหล่านี้</p>
+                    </div>
+                  </div>
+                  <a
+                    href="/vocabulary"
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> จัดการ
+                  </a>
+                </motion.div>
+              ) : (
+                <motion.div
+                  initial={{ opacity: 0, y: -8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex items-center justify-between gap-4 bg-white/[0.02] border border-white/5 rounded-2xl px-6 py-4"
+                >
+                  <div className="flex items-center gap-3">
+                    <BookOpen className="w-5 h-5 text-slate-600 shrink-0" />
+                    <p className="text-slate-500 text-sm text-left">ไม่มีคำ Focus — เกมจะสุ่มจากคำศัพท์ทั้งหมด</p>
+                  </div>
+                  <a
+                    href="/vocabulary"
+                    className="shrink-0 flex items-center gap-1.5 text-xs text-slate-500 hover:text-white font-bold transition-colors"
+                  >
+                    <BookOpen className="w-3.5 h-3.5" /> เลือก Focus
+                  </a>
+                </motion.div>
+              )}
+
               <section>
                 <p className="text-indigo-500 text-[10px] tracking-[0.4em] uppercase font-black mb-6">Category Selection</p>
                 <div className="flex flex-wrap justify-center gap-3">
@@ -271,7 +333,21 @@ const GamePage = () => {
 
             <div className="w-full max-w-4xl z-10 flex-1 flex flex-col">
               <div className="flex justify-between items-end mb-20 text-white">
-                <div className="scale-75 origin-left"><Logo /></div>
+                <div className="flex items-center gap-4">
+                  <div className="scale-75 origin-left"><Logo /></div>
+                  {/* ✅ Focus Mode Badge — แสดงเฉพาะตอนเล่นในโหมด Focus */}
+                  {isFocusMode && (
+                    <motion.div
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="flex items-center gap-1.5 bg-indigo-600/20 border border-indigo-500/30 px-3 py-1.5 rounded-full"
+                      title="กำลังเล่นในโหมด Focus — สุ่มเฉพาะคำที่คุณ Tick ไว้"
+                    >
+                      <Target className="w-3.5 h-3.5 text-indigo-400" />
+                      <span className="text-indigo-300 text-[10px] font-bold uppercase tracking-wider">Focus Mode</span>
+                    </motion.div>
+                  )}
+                </div>
                 
                 {/* ✅ โชว์คะแนนรวม (DB) และคะแนนรอบนี้แยกกัน */}
                 <div className="flex gap-8 text-right">

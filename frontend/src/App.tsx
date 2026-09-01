@@ -5,7 +5,8 @@ import GamePage from './pages/GamePage'; // 1. Import หน้าเกมเ�
 import AdminUsers from './pages/AdminUsers'; // 2. Import หน้า Admin Settings เข้ามา
 import AdminWordDB from './pages/AdminWordDB'; // 3. Import หน้า Admin Word Database เข้ามา
 import Dashboard from './pages/Dashboard';
-import VocabularyPage from './pages/VocabularyPage'; // 4. Import หน้า Vocabulary เข้ามา
+import VocabularyPage from './pages/VocabularyPage';
+import PracticePage from './pages/PracticePage'; // 5. Import หน้า Practice เข้ามา
 
 
 
@@ -30,6 +31,9 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         {/* หน้า Vocabulary - ดูคำศัพท์และจัดการ Focus */}
         <Route path="/vocabulary" element={<VocabularyPage />} />
+        {/* หน้าฝึกพิมพ์ Typing Practice */}
+        <Route path="/practice" element={<PracticePage />} />
+
 
       </Routes>
     </Router>

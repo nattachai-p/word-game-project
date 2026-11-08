@@ -51,17 +51,16 @@ app.use('/api/focus', focusRoutes); // เพิ่ม route สำหรับ 
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
 
 // ─────────────────────────────────────────────
-// Start server เฉพาะตอนรันเอง (local dev)
-// บน Vercel (serverless) จะไม่ listen แต่ export app ให้ runtime เรียกแทน
+// Start server — listen บนพอร์ตที่ host กำหนด (process.env.PORT)
+// Vercel (Services mode, framework=express) จะ inject PORT แล้วรันไฟล์นี้เป็น server
+// ตอน dev ไม่มี PORT → ใช้ 8080
 // ─────────────────────────────────────────────
-if (!process.env.VERCEL) {
-  const PORT = process.env.PORT || 8080;
-  app.listen(PORT, () => {
-    console.log(`-------------------------------------------`);
-    console.log(`🚀 Server is running on http://localhost:${PORT}`);
-    console.log(`📡 Ready for Game API connections...`);
-    console.log(`-------------------------------------------`);
-  });
-}
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`-------------------------------------------`);
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📡 Ready for Game API connections...`);
+  console.log(`-------------------------------------------`);
+});
 
 export default app;

@@ -21,6 +21,7 @@ const PracticePage = () => {
   const [showExample, setShowExample] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusCount, setFocusCount] = useState(0);
+  const [useFocus, setUseFocus] = useState(true); // ✅ เลือกใช้ Focus หรือไม่
 
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -74,7 +75,11 @@ const PracticePage = () => {
   // --- Functions ---
   const startPractice = async () => {
     try {
-      const url = selectedCategory === 'ALL' ? '/words/random' : `/words/random?category=${selectedCategory}`;
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'ALL') params.set('category', selectedCategory);
+      if (!useFocus) params.set('focus', 'off'); // ไม่เอา Focus → สุ่มทั้งหมด
+      const qs = params.toString();
+      const url = qs ? `/words/random?${qs}` : '/words/random';
       const res = await api.get(url);
 
       const wordList = res.data.words;
@@ -183,6 +188,15 @@ const PracticePage = () => {
                     <button key={c} onClick={() => setSelectedCategory(c)} className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === c ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:border-white/30'}`}>{c}</button>
                   ))}
                 </div>
+
+                {/* ✅ ตัวเลือก Focus — โชว์เมื่อมีคำ Focus */}
+                {focusCount > 0 && (
+                  <div className="flex items-center justify-center gap-3 mt-8">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Focus</span>
+                    <button onClick={() => setUseFocus(true)} className={`px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${useFocus ? 'bg-teal-500 border-teal-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>เฉพาะคำ Focus ({focusCount})</button>
+                    <button onClick={() => setUseFocus(false)} className={`px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${!useFocus ? 'bg-white border-white text-black' : 'border-white/10 text-slate-500 hover:text-white'}`}>สุ่มทั้งหมด</button>
+                  </div>
+                )}
               </section>
 
               <button onClick={startPractice} className="w-full bg-teal-500 py-6 rounded-2xl text-white font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-teal-400 transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)]">

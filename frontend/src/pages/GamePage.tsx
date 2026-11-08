@@ -39,6 +39,7 @@ const GamePage = () => {
   const [isRevealed, setIsRevealed] = useState(false);
   const [isFocusMode, setIsFocusMode] = useState(false);  // ✅ โหมด Focus
   const [focusCount, setFocusCount] = useState(0);         // ✅ จำนวนคำที่ Focus ไว้
+  const [useFocus, setUseFocus] = useState(true);          // ✅ ผู้เล่นเลือกใช้ Focus หรือไม่
   
   // Timer States
   const [timeElapsed, setTimeElapsed] = useState(0);
@@ -108,7 +109,11 @@ const GamePage = () => {
   // --- Functions ---
   const startStore = async () => {
     try {
-      const url = selectedCategory === 'ALL' ? '/words/random' : `/words/random?category=${selectedCategory}`;
+      const params = new URLSearchParams();
+      if (selectedCategory !== 'ALL') params.set('category', selectedCategory);
+      if (!useFocus) params.set('focus', 'off'); // ไม่เอา Focus → สุ่มทั้งหมด
+      const qs = params.toString();
+      const url = qs ? `/words/random?${qs}` : '/words/random';
       const res = await api.get(url);
 
       // ✅ Backend ตอบกลับเป็น { words: [...], isFocusMode: bool }
@@ -252,16 +257,10 @@ const GamePage = () => {
                   <div className="flex items-center gap-3">
                     <Target className="w-5 h-5 text-indigo-400 shrink-0" />
                     <div className="text-left">
-                      <p className="text-indigo-300 font-bold text-sm">Focus Mode Active</p>
-                      <p className="text-indigo-500 text-xs">คุณมี {focusCount} คำที่ Focus ไว้ — เกมจะสุ่มเฉพาะคำเหล่านี้</p>
+                      <p className="text-indigo-300 font-bold text-sm">มีคำ Focus {focusCount} คำ</p>
+                      <p className="text-indigo-500 text-xs">เลือกด้านล่างได้ว่าจะเล่นเฉพาะคำ Focus หรือสุ่มทั้งหมด</p>
                     </div>
                   </div>
-                  <a
-                    href="/vocabulary"
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 font-bold transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" /> จัดการ
-                  </a>
                 </motion.div>
               ) : (
                 <motion.div
@@ -271,14 +270,8 @@ const GamePage = () => {
                 >
                   <div className="flex items-center gap-3">
                     <BookOpen className="w-5 h-5 text-slate-600 shrink-0" />
-                    <p className="text-slate-500 text-sm text-left">ไม่มีคำ Focus — เกมจะสุ่มจากคำศัพท์ทั้งหมด</p>
+                    <p className="text-slate-500 text-sm text-left">ยังไม่มีคำ Focus — เกมจะสุ่มจากคำศัพท์ทั้งหมด (เลือกคำ Focus ได้ที่หน้า Vocabulary)</p>
                   </div>
-                  <a
-                    href="/vocabulary"
-                    className="shrink-0 flex items-center gap-1.5 text-xs text-slate-500 hover:text-white font-bold transition-colors"
-                  >
-                    <BookOpen className="w-3.5 h-3.5" /> เลือก Focus
-                  </a>
                 </motion.div>
               )}
 
@@ -290,6 +283,15 @@ const GamePage = () => {
                     <button key={c} onClick={() => setSelectedCategory(c)} className={`px-6 py-3 rounded-xl border transition-all font-bold ${selectedCategory === c ? 'bg-white text-black border-white' : 'border-white/10 text-slate-500 hover:border-white/30'}`}>{c}</button>
                   ))}
                 </div>
+
+                {/* ✅ ตัวเลือก Focus — โชว์เมื่อมีคำ Focus */}
+                {focusCount > 0 && (
+                  <div className="flex items-center justify-center gap-3 mt-8">
+                    <span className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">Focus</span>
+                    <button onClick={() => setUseFocus(true)} className={`px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${useFocus ? 'bg-indigo-600 border-indigo-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>เฉพาะคำ Focus ({focusCount})</button>
+                    <button onClick={() => setUseFocus(false)} className={`px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${!useFocus ? 'bg-white border-white text-black' : 'border-white/10 text-slate-500 hover:text-white'}`}>สุ่มทั้งหมด</button>
+                  </div>
+                )}
               </section>
 
               <section>

@@ -18,6 +18,8 @@ const router = express.Router();
 // ─────────────────────────────────────────────
 router.get('/random', async (req: any, res: Response) => {
   const category = req.query.category as string | undefined;
+  // ?focus=off → บังคับสุ่มจากคำทั้งหมด (ไม่สนว่า user มี Focus ไว้ไหม)
+  const ignoreFocus = req.query.focus === 'off';
 
   // ดึง token ถ้ามี (ไม่บังคับ login)
   let userId: number | null = null;
@@ -44,7 +46,7 @@ router.get('/random', async (req: any, res: Response) => {
       );
       const focusCount = parseInt(countResult.rows[0].count);
 
-      if (focusCount > 0) {
+      if (focusCount > 0 && !ignoreFocus) {
         // ─── Focus Mode: สุ่มเฉพาะคำที่ Focus ───
         isFocusMode = true;
         let sql = `

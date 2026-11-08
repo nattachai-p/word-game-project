@@ -37,6 +37,12 @@ const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCol
       
       <nav className="flex-1 px-4 space-y-2 mt-4 overflow-hidden">
 
+        {/* ✅ Tab เล่นเกม — อยู่บนสุดเสมอ */}
+        <Link to="/game" title="Play Game" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/game') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
+          <Gamepad2 className="w-5 h-5 min-w-[20px]" />
+          {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Play Game</span>}
+        </Link>
+
         <Link to="/dashboard" title="Dashboard" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/dashboard') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
           <BarChart3 className="w-5 h-5 min-w-[20px]" />
           {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Dashboard</span>}

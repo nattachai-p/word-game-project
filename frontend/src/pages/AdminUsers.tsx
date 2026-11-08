@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UserCog, ArrowLeft, Edit3, ShieldCheck, User, Coins } from 'lucide-react';
+import { UserCog, Edit3, ShieldCheck, User, Coins } from 'lucide-react';
 import api from '../api/axios';
+import Sidebar from '../components/Sidebar';
 
 const AdminUsers = () => {
-  const navigate = useNavigate();
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -62,15 +61,9 @@ const AdminUsers = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-white flex flex-col font-['Inter'] relative p-12">
-      
-      {/* --- ปุ่ม Back to Game --- */}
-      <button 
-        onClick={() => navigate('/game')}
-        className="absolute top-10 left-12 flex items-center gap-3 px-4 py-3 rounded-2xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all font-bold z-10"
-      >
-        <ArrowLeft size={20} /> Back to Game
-      </button>
+    <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <div className="flex-1 min-w-0 flex flex-col relative p-12">
 
       {/* --- Main Content --- */}
       <main className="flex-1 max-w-7xl mx-auto w-full mt-16">
@@ -188,6 +181,7 @@ const AdminUsers = () => {
           </div>
         )}
       </AnimatePresence>
+      </div>
     </div>
   );
 };

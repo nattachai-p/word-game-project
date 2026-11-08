@@ -1,10 +1,9 @@
 import { useState } from 'react';
-import { Sparkles, Save, Trash2, Loader2, Plus, ArrowLeft, Settings2, Edit3, X } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Sparkles, Save, Trash2, Loader2, Plus, Settings2, Edit3, X } from 'lucide-react';
 import api from '../api/axios';
+import Sidebar from '../components/Sidebar';
 
 const AdminWordDB = () => {
-  const navigate = useNavigate();
   const [words, setWords] = useState<any[]>([]);
   const [inputWord, setInputWord] = useState('');
   const [topic, setTopic] = useState(''); // เคลียร์เป็นค่าว่างให้สุ่มอิสระ
@@ -103,13 +102,9 @@ const AdminWordDB = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#050505] text-slate-200 p-8 font-['Inter'] relative">
-      <button 
-        onClick={() => navigate('/game')}
-        className="absolute top-8 left-8 flex items-center gap-3 px-4 py-3 rounded-2xl text-red-400 hover:bg-red-500/10 hover:text-red-300 transition-all font-bold z-10"
-      >
-        <ArrowLeft size={20} /> Back to Game
-      </button>
+    <div className="flex min-h-screen bg-[#050505] text-slate-200 font-['Inter']">
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <div className="flex-1 min-w-0 p-8 relative">
 
       <div className="max-w-7xl mx-auto mt-16">
         <header className="flex justify-between items-end mb-10">
@@ -249,6 +244,7 @@ const AdminWordDB = () => {
             </tbody>
           </table>
         </div>
+      </div>
       </div>
     </div>
   );

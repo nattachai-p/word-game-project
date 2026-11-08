@@ -233,7 +233,7 @@ const PracticePage = () => {
               <div className="text-center space-y-12">
                 <div className="space-y-6 relative">
                   {/* แสดงคำศัพท์เต็มๆ ให้พิมพ์ตาม */}
-                  <p className="text-8xl font-mono tracking-[0.2em] text-teal-400 font-bold uppercase">{words[currentIndex]?.eng}</p>
+                  <p className="text-8xl font-mono tracking-[0.2em] text-teal-400 font-bold lowercase">{words[currentIndex]?.eng}</p>
                   <p className="text-3xl text-slate-300 font-medium tracking-wide">{words[currentIndex]?.th_read}</p>
                   <p className="text-5xl text-slate-500 font-light italic">{words[currentIndex]?.th_meaning}</p>
                 </div>
@@ -277,7 +277,7 @@ const PracticePage = () => {
                         return (
                           <div 
                             key={i} 
-                            className={`w-12 h-16 sm:w-16 sm:h-20 border-b-4 flex items-center justify-center text-4xl sm:text-5xl font-black uppercase transition-all ${boxBorder} ${boxText}`}
+                            className={`w-12 h-16 sm:w-16 sm:h-20 border-b-4 flex items-center justify-center text-4xl sm:text-5xl font-black lowercase transition-all ${boxBorder} ${boxText}`}
                           >
                             {char}
                           </div>

@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Medal, BarChart3, Star, ArrowLeft } from 'lucide-react';
+import { Trophy, Medal, BarChart3, Star } from 'lucide-react';
 import api from '../api/axios';
-// ❌ เอาการ Import Sidebar ออกไป
+import Sidebar from '../components/Sidebar';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -43,21 +43,14 @@ const Dashboard = () => {
   if (!user) return <div className="min-h-screen bg-[#050505] flex items-center justify-center text-white font-['Inter']">Loading...</div>;
 
   return (
-    // ✅ ลบ Tag ย่อยของ Sidebar ออก เปลี่ยนให้เนื้อหาเต็มจอ
-    <div className="min-h-screen bg-[#050505] text-white font-['Inter'] p-8 md:p-12 overflow-y-auto">
-      
+    <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
+      <Sidebar role={user.role} initialCollapsed={true} />
+      <div className="flex-1 min-w-0 p-8 md:p-12 overflow-y-auto">
+
       {/* Header */}
       <div className="max-w-5xl mx-auto flex items-center justify-between mb-12">
         <div className="flex items-center gap-6">
-          {/* ✅ ปุ่ม Back to Game สุดเท่ */}
-          <button 
-            onClick={() => navigate('/game')}
-            className="flex items-center gap-2 px-5 py-2.5 bg-red-500/10 text-red-400 hover:bg-red-500/20 hover:text-red-300 rounded-2xl transition-all font-bold tracking-wide"
-          >
-            <ArrowLeft className="w-5 h-5" /> Back to Game
-          </button>
-          
-          <div className="hidden md:flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <BarChart3 className="w-8 h-8 text-indigo-500" />
             <h1 className="text-3xl font-black uppercase tracking-widest">Dashboard</h1>
           </div>
@@ -122,6 +115,7 @@ const Dashboard = () => {
           )}
         </div>
         
+      </div>
       </div>
     </div>
   );

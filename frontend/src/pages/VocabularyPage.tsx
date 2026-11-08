@@ -6,6 +6,7 @@ import {
   Target, X, Filter, Layers, ArrowLeft, Loader2, Star
 } from 'lucide-react';
 import api from '../api/axios';
+import Sidebar from '../components/Sidebar';
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 interface Word {
@@ -162,7 +163,9 @@ const VocabularyPage = () => {
 
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
-    <div className="min-h-screen bg-[#050505] text-white font-['Inter']">
+    <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <div className="flex-1 min-w-0">
 
       {/* ── Header ── */}
       <div className="sticky top-0 z-30 bg-[#050505]/90 backdrop-blur-xl border-b border-white/5">
@@ -366,7 +369,7 @@ const VocabularyPage = () => {
                     <div className="pr-10">
                       <div className="flex items-start gap-3 mb-2">
                         <div>
-                          <p className="text-xl font-black text-white uppercase tracking-wide leading-tight">
+                          <p className="text-xl font-black text-white lowercase tracking-wide leading-tight">
                             {word.eng}
                           </p>
                           <p className="text-indigo-400 text-xs font-medium mt-0.5">
@@ -449,6 +452,7 @@ const VocabularyPage = () => {
             </button>
           </div>
         )}
+      </div>
       </div>
     </div>
   );

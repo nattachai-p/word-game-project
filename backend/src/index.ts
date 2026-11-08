@@ -1,4 +1,5 @@
-import 'dotenv/config'; // ต้องอยู่บรรทัดแรกสุดเสมอ!
+// env มาจาก: local = tsx --env-file=.env (ดู script "dev"), Vercel = platform env
+// ไม่ใช้ dotenv เพื่อเลี่ยงปัญหา bundler หา subpath 'dotenv/config' ไม่เจอบน Vercel
 import express from 'express';
 import cors from 'cors';
 import userRoutes from './routes/userRoutes.js';

@@ -419,7 +419,7 @@ const GamePage = () => {
                     <form onSubmit={checkAnswer} className="pt-20 max-w-2xl mx-auto relative">
                       {/* Visual Boxes */}
                       <div className="flex justify-center gap-2 sm:gap-4 relative z-0 pointer-events-none">
-                        {(words[currentIndex]?.eng || '').split('').map((_, i) => {
+                        {(words[currentIndex]?.eng || '').split('').map((_: string, i: number) => {
                           const char = userInput[i] || '';
                           const isFocused = userInput.length === i; // The current active box
                           

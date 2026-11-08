@@ -257,7 +257,7 @@ const PracticePage = () => {
                 {!showExample && (
                   <form onSubmit={checkAnswer} className="pt-20 max-w-2xl mx-auto relative">
                     <div className="flex justify-center gap-2 sm:gap-4 relative z-0 pointer-events-none">
-                      {(words[currentIndex]?.eng || '').split('').map((_, i: number) => {
+                      {(words[currentIndex]?.eng || '').split('').map((_: string, i: number) => {
                         const char = userInput[i] || '';
                         const isFocused = userInput.length === i;
                         

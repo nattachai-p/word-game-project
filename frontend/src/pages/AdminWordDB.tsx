@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Sparkles, Save, Trash2, Loader2, Plus, ArrowLeft, Settings2, Edit3, X, CheckCircle2 } from 'lucide-react';
+import { Sparkles, Save, Trash2, Loader2, Plus, ArrowLeft, Settings2, Edit3, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../api/axios';
 
@@ -10,7 +10,7 @@ const AdminWordDB = () => {
   const [topic, setTopic] = useState(''); // เคลียร์เป็นค่าว่างให้สุ่มอิสระ
   const [loading, setLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false); // ✅ ป้องกันกดปุ่ม Save ซ้ำ
-  const [aiModel, setAiModel] = useState('llama-3.3-70b-versatile');
+  const [aiModel, setAiModel] = useState('gemini-2.5-flash');
   const [showManualForm, setShowManualForm] = useState(false);
   const [manualEng, setManualEng] = useState('');
   const [manualThRead, setManualThRead] = useState('');
@@ -127,15 +127,14 @@ const AdminWordDB = () => {
                   className="bg-transparent text-xs text-slate-300 focus:outline-none cursor-pointer"
                 >
                   <optgroup label="Google (Gemini)">
-                    <option value="gemini-3.5-flash">Gemini 3.5 Flash (Fast)</option>
-                    <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
-                    <option value="gemini-1.5-pro">Gemini 1.5 Pro</option>
-                    <option value="gemini-pro">Gemini Pro</option>
+                    <option value="gemini-2.5-flash">Gemini 2.5 Flash (Fast)</option>
+                    <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
+                    <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
                   </optgroup>
-                  <optgroup label="Groq (Llama) - Requires Key">
-                    <option value="llama-3.3-70b-versatile">Llama 3.3 70B (Fast & Free)</option>
-                    <option value="llama-3.1-8b-instant">Llama 3.1 8B (Super Fast)</option>
-                    <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
+                  <optgroup label="Groq (Open Models)">
+                    <option value="openai/gpt-oss-20b">GPT-OSS 20B (Fast)</option>
+                    <option value="openai/gpt-oss-120b">GPT-OSS 120B</option>
+                    <option value="qwen/qwen3.8-27b">Qwen 3.8 27B</option>
                   </optgroup>
                 </select>
               </div>

@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { query } from '../db.js';
 import { authenticateToken } from '../middleware/auth.js';
+import { JWT_SECRET } from '../config.js';
 
 const router = express.Router();
 
@@ -25,7 +26,6 @@ router.get('/random', async (req: any, res: Response) => {
     try {
       const token = authHeader.split(' ')[1];
       const jwt = await import('jsonwebtoken');
-      const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
       const decoded: any = jwt.default.verify(token, JWT_SECRET);
       userId = decoded.userId;
     } catch (_) {

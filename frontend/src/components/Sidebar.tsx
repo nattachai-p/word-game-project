@@ -9,6 +9,7 @@ const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCol
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('role'); // ✅ ลบ role ด้วย กัน role ค้างใน storage
     navigate('/login');
   };
 

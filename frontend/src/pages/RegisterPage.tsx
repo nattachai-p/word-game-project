@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { User, Lock, ArrowRight, Loader2 } from 'lucide-react';
-import axios from 'axios';
+import api from '../api/axios';
 import { useNavigate } from 'react-router-dom';
 import Logo from '../components/Logo';
 
@@ -13,22 +13,27 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   // แก้ชื่อฟังก์ชันเป็น handleRegister
-  const handleRegister = async () => {
+  const handleRegister = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (!username || !password) {
       setError('Identity and Credential are required.');
+      return;
+    }
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters.');
       return;
     }
     setLoading(true);
     setError('');
     try {
-      // 1. แก้ URL ให้ยิงไปที่ /api/register
-      await axios.post('http://localhost:8080/api/register', { username, password });
-      
-      // 2. สมัครเสร็จปุ๊บ ให้เด้งกลับไปหน้า Login เพื่อให้ผู้ใช้เข้าสู่ระบบ
+      // ✅ ใช้ api instance (baseURL จาก .env) แทน URL ตายตัว
+      await api.post('/register', { username, password });
+
+      // สมัครเสร็จปุ๊บ ให้เด้งกลับไปหน้า Login เพื่อให้ผู้ใช้เข้าสู่ระบบ
       alert('Registration successful! Please login.');
-      navigate('/login'); 
+      navigate('/login');
     } catch (err: any) {
-      setError(err.response?.data?.error || "Registration failed. Username might be taken.");
+      setError(err.response?.data?.error || err.response?.data?.message || "Registration failed. Username might be taken.");
     } finally {
       setLoading(false);
     }
@@ -57,7 +62,7 @@ const RegisterPage = () => {
             )}
           </AnimatePresence>
 
-          <div className="space-y-4">
+          <form onSubmit={handleRegister} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[11px] uppercase tracking-[0.2em] text-slate-500 font-semibold ml-1 text-left block">
                 Choose Identity
@@ -90,16 +95,16 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            <motion.button 
-              onClick={handleRegister} 
-              disabled={loading} 
-              whileHover={{ scale: 1.01, backgroundColor: "#fff", color: "#000" }} 
-              whileTap={{ scale: 0.99 }} 
+            <motion.button
+              type="submit"
+              disabled={loading}
+              whileHover={{ scale: 1.01, backgroundColor: "#fff", color: "#000" }}
+              whileTap={{ scale: 0.99 }}
               className="w-full bg-white/5 border border-white/10 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 mt-4 transition-all disabled:opacity-50"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Create Account <ArrowRight className="w-4 h-4" /></>}
             </motion.button>
-          </div>
+          </form>
         </div>
 
         <div className="mt-10 text-center">

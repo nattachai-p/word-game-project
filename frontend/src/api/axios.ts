@@ -1,8 +1,11 @@
 import axios from 'axios';
 
-// สร้าง instance ของ axios ที่ตั้งค่าพื้นฐานไว้แล้ว
+// baseURL:
+//  - prod (Vercel): ใช้ '/api' = โดเมนเดียวกัน (serverless function)
+//  - dev: '/api' ผ่าน vite proxy ไป http://localhost:8080 (ดู vite.config.ts)
+//  - override ได้ด้วย VITE_API_URL ถ้าต้องการชี้ backend คนละที่
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL, // ดึงค่าจาก .env มาใช้ตรงนี้
+  baseURL: import.meta.env.VITE_API_URL || '/api',
   headers: {
     'Content-Type': 'application/json',
   }

@@ -3,23 +3,40 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { query } from '../db.js';
 import { authenticateToken, isAdmin } from '../middleware/auth.js'; // หรือ .ts ขึ้นอยู่กับ config ของกัปตัน
+import { JWT_SECRET } from '../config.js';
+import { authLimiter } from '../middleware/rateLimit.js';
 
 
 
 const router = express.Router();
-const JWT_SECRET = process.env.JWT_SECRET || 'your_secret_key';
 
 // 1. API สมัครสมาชิก
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authLimiter, async (req: Request, res: Response) => {
   const { username, password } = req.body;
+
+  // ── Input validation ──
+  if (typeof username !== 'string' || typeof password !== 'string') {
+    return res.status(400).json({ message: 'ข้อมูลไม่ถูกต้อง' });
+  }
+  const uname = username.trim();
+  if (uname.length < 3 || uname.length > 30) {
+    return res.status(400).json({ message: 'Username ต้องยาว 3-30 ตัวอักษร' });
+  }
+  if (!/^[a-zA-Z0-9_.-]+$/.test(uname)) {
+    return res.status(400).json({ message: 'Username ใช้ได้เฉพาะ a-z, 0-9, _ . -' });
+  }
+  if (password.length < 4) {
+    return res.status(400).json({ message: 'Password ต้องยาวอย่างน้อย 4 ตัวอักษร' });
+  }
+
   try {
-    const userExist = await query('SELECT * FROM users WHERE username = $1', [username]);
+    const userExist = await query('SELECT * FROM users WHERE username = $1', [uname]);
     if (userExist.rows.length > 0) return res.status(400).json({ message: 'Username already exists' });
 
     const hashedPassword = await bcrypt.hash(password, 10);
     const result = await query(
       'INSERT INTO users (username, password_hash, role) VALUES ($1, $2, $3) RETURNING id, username, role',
-      [username, hashedPassword, 'user']
+      [uname, hashedPassword, 'user']
     );
     res.status(201).json({ message: 'User created', user: result.rows[0] });
   } catch (err) {
@@ -27,8 +44,8 @@ router.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-// 2. API สำหรับ Login 
-router.post('/login', async (req: Request, res: Response) => {
+// 2. API สำหรับ Login
+router.post('/login', authLimiter, async (req: Request, res: Response) => {
   const { username, password } = req.body;
   try {
     const result = await query('SELECT * FROM users WHERE username = $1', [username]);

@@ -7,6 +7,7 @@ import AdminWordDB from './pages/AdminWordDB'; // 3. Import หน้า Admin W
 import Dashboard from './pages/Dashboard';
 import VocabularyPage from './pages/VocabularyPage';
 import PracticePage from './pages/PracticePage'; // 5. Import หน้า Practice เข้ามา
+import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 
 
 
@@ -16,25 +17,24 @@ function App() {
       <Routes>
         {/* หน้าแรกให้วิ่งไป Login */}
         <Route path="/" element={<Navigate to="/login" />} />
-        
-        {/* เส้นทางคุมหน้าตา */}
+
+        {/* เส้นทางสาธารณะ (ไม่ต้อง Login) */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
-        
-        {/* หน้าเกมในอนาคต */}
-        <Route path="/game" element={<GamePage />} />
-        {/* หน้าตั้งค่า Admin */}
-        <Route path="/admin/users" element={<AdminUsers />} />
-        {/* หน้าฐานข้อมูลคำศัพท์ Admin */}
-        <Route path="/admin/word-db" element={<AdminWordDB />} />
-        {/* หน้า Dashboard */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        {/* หน้า Vocabulary - ดูคำศัพท์และจัดการ Focus */}
-        <Route path="/vocabulary" element={<VocabularyPage />} />
-        {/* หน้าฝึกพิมพ์ Typing Practice */}
-        <Route path="/practice" element={<PracticePage />} />
 
+        {/* หน้าที่ต้อง Login ก่อน */}
+        <Route path="/game" element={<ProtectedRoute><GamePage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/vocabulary" element={<ProtectedRoute><VocabularyPage /></ProtectedRoute>} />
+        <Route path="/practice" element={<ProtectedRoute><PracticePage /></ProtectedRoute>} />
+        {/* หน้าฐานข้อมูลคำศัพท์ (ต้อง Login) */}
+        <Route path="/admin/word-db" element={<ProtectedRoute><AdminWordDB /></ProtectedRoute>} />
 
+        {/* หน้าเฉพาะ Admin เท่านั้น */}
+        <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+
+        {/* กันหลงทาง: path แปลก ๆ เด้งกลับ login */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </Router>
   );

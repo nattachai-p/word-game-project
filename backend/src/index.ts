@@ -2,6 +2,7 @@
 // ไม่ใช้ dotenv เพื่อเลี่ยงปัญหา bundler หา subpath 'dotenv/config' ไม่เจอบน Vercel
 import express from 'express';
 import cors from 'cors';
+import { ensureSchema } from './db.js';
 import userRoutes from './routes/userRoutes.js';
 import wordRoutes from './routes/wordRoutes.js';
 import categoryRoute from './routes/categoryRoute.js'; // นำเข้า route สำหรับดึงหมวดหมู่
@@ -50,6 +51,9 @@ app.use('/api/focus', focusRoutes); // เพิ่ม route สำหรับ 
 
 // Health check (ใช้เช็คว่า API ยังมีชีวิต)
 app.get('/api/health', (_req, res) => res.json({ ok: true }));
+
+// สร้างตารางที่จำเป็น (ไม่ block การ start)
+ensureSchema().catch((e) => console.error('ensureSchema failed:', e));
 
 // ─────────────────────────────────────────────
 // Start server — listen บนพอร์ตที่ host กำหนด (process.env.PORT)

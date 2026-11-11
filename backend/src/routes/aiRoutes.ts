@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import Groq from "groq-sdk";
 import { query } from '../db.js';
-import { authenticateToken } from '../middleware/auth.js';
+import { authenticateToken, isAdmin } from '../middleware/auth.js';
 import { aiLimiter } from '../middleware/rateLimit.js';
 
 const router = express.Router();
@@ -70,8 +70,8 @@ router.post('/analyze-word', async (req: Request, res: Response) => {
   }
 });
 
-// 2. Random AI Topic
-router.post('/random-words', async (req: Request, res: Response) => {
+// 2. Random AI Topic (เฉพาะ admin — กันคนทั่วไปเผา quota)
+router.post('/random-words', isAdmin, async (req: Request, res: Response) => {
   const { topic, model: aiModel } = req.body;
   try {
     const modelName = aiModel || DEFAULT_MODEL;

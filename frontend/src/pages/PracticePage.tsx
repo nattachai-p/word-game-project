@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, CheckCircle2, ArrowRight, Keyboard, Target, BookOpen } from 'lucide-react';
+import { Play, CheckCircle2, ArrowRight, Keyboard, Target, BookOpen, Repeat, Zap } from 'lucide-react';
 import api from '../api/axios';
-import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
 
 const PracticePage = () => {
@@ -22,6 +21,8 @@ const PracticePage = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);
   const [focusCount, setFocusCount] = useState(0);
   const [useFocus, setUseFocus] = useState(true); // ✅ เลือกใช้ Focus หรือไม่
+  const [repeatMode, setRepeatMode] = useState(false); // ✅ ฝึกคำซ้ำ (วนชุดเดิม)
+  const [skipAnim, setSkipAnim] = useState(false);     // ✅ โหมดเร็ว: ข้ามแอนิเมชัน ไปคำถัดไปทันที
 
   const nextBtnRef = useRef<HTMLButtonElement>(null);
 
@@ -73,22 +74,25 @@ const PracticePage = () => {
   }, []);
 
   // --- Functions ---
+  // ดึงคำชุดใหม่จาก API (ใช้ทั้งตอนเริ่มและตอนเล่นต่อเนื่อง)
+  const loadWords = async () => {
+    const params = new URLSearchParams();
+    if (selectedCategory !== 'ALL') params.set('category', selectedCategory);
+    if (!useFocus) params.set('focus', 'off'); // ไม่เอา Focus → สุ่มทั้งหมด
+    const qs = params.toString();
+    const url = qs ? `/words/random?${qs}` : '/words/random';
+    const res = await api.get(url);
+    return res.data as { words: any[]; isFocusMode?: boolean };
+  };
+
   const startPractice = async () => {
     try {
-      const params = new URLSearchParams();
-      if (selectedCategory !== 'ALL') params.set('category', selectedCategory);
-      if (!useFocus) params.set('focus', 'off'); // ไม่เอา Focus → สุ่มทั้งหมด
-      const qs = params.toString();
-      const url = qs ? `/words/random?${qs}` : '/words/random';
-      const res = await api.get(url);
-
-      const wordList = res.data.words;
-      const focusMode = res.data.isFocusMode ?? false;
-
+      const data = await loadWords();
+      const wordList = data.words;
       if (!wordList || wordList.length === 0) return alert("ไม่พบคำศัพท์ในหมวดนี้!");
-      
+
       setWords(wordList);
-      setIsFocusMode(focusMode);
+      setIsFocusMode(data.isFocusMode ?? false);
       setStep('playing');
       setCurrentIndex(0);
       setUserInput('');
@@ -104,6 +108,11 @@ const PracticePage = () => {
     const isMatch = userInput.toLowerCase().trim() === words[currentIndex].eng.toLowerCase().trim();
 
     if (isMatch) {
+      // ⚡ โหมดเร็ว: ตอบถูก → ไปคำถัดไปทันที ไม่โชว์ Correct Spelling/แอนิเมชัน
+      if (skipAnim) {
+        nextWord();
+        return;
+      }
       setFeedback('correct');
       setTimeout(() => {
         setFeedback('none');
@@ -115,16 +124,29 @@ const PracticePage = () => {
     }
   };
 
-  const nextWord = () => {
+  // เล่นต่อเนื่องไม่รู้จบ: จบชุด → วนชุดเดิม (repeat) หรือดึงชุดใหม่
+  const nextWord = async () => {
     setFeedback('none');
     setShowExample(false);
     setUserInput('');
-    
+
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
-    } else {
-      alert('จบการฝึกพิมพ์รอบนี้แล้ว! ยอดเยี่ยมมากครับ');
-      setStep('select');
+      return;
+    }
+    if (repeatMode) {
+      setCurrentIndex(0); // ฝึกคำซ้ำ: วนชุดเดิม
+      return;
+    }
+    try {
+      const data = await loadWords();
+      if (data.words && data.words.length > 0) {
+        setWords(data.words);
+        setIsFocusMode(data.isFocusMode ?? false);
+      }
+      setCurrentIndex(0);
+    } catch (_) {
+      setCurrentIndex(0);
     }
   };
 
@@ -132,7 +154,7 @@ const PracticePage = () => {
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
-      <Sidebar role={user.role} initialCollapsed={true} />
+      <Sidebar role={user.role} initialCollapsed={false} />
 
       <main className={`flex-1 relative transition-colors duration-500 overflow-hidden flex flex-col items-center justify-center
         ${step !== 'select' && feedback === 'wrong' ? 'bg-red-950' : ''}
@@ -142,13 +164,10 @@ const PracticePage = () => {
         {/* ----------------- STEP: SELECT ----------------- */}
         {step === 'select' && (
           <div className="flex flex-col items-center p-6 text-center w-full max-w-4xl">
-            <div className="w-full flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-              <Logo />
-              <div className="flex items-center gap-4 text-right">
-                 <h1 className="text-3xl font-black italic tracking-tighter text-teal-400 uppercase flex items-center gap-2">
-                    <Keyboard className="w-8 h-8" /> Practice Mode
-                 </h1>
-              </div>
+            <div className="w-full flex items-center justify-between mb-10 border-b border-white/5 pb-6">
+              <h1 className="text-3xl font-black italic tracking-tighter text-teal-400 uppercase flex items-center gap-2">
+                <Keyboard className="w-8 h-8" /> Practice Mode
+              </h1>
             </div>
 
             <div className="space-y-12 w-full max-w-2xl mt-4">
@@ -199,6 +218,20 @@ const PracticePage = () => {
                 )}
               </section>
 
+              {/* ✅ Options: ฝึกคำซ้ำ / โหมดเร็ว */}
+              <section>
+                <p className="text-teal-500 text-[10px] tracking-[0.4em] uppercase font-black mb-6">Options</p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <button onClick={() => setRepeatMode(v => !v)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${repeatMode ? 'bg-teal-500 border-teal-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>
+                    <Repeat className="w-4 h-4" /> ฝึกคำซ้ำ (วนชุดเดิม)
+                  </button>
+                  <button onClick={() => setSkipAnim(v => !v)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${skipAnim ? 'bg-teal-500 border-teal-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>
+                    <Zap className="w-4 h-4" /> โหมดเร็ว (ข้ามแอนิเมชัน)
+                  </button>
+                </div>
+                <p className="text-slate-600 text-xs mt-4">เล่นต่อเนื่องไม่รู้จบ — จบชุดแล้วสุ่มคำใหม่อัตโนมัติ (หรือวนชุดเดิมถ้าเปิด "ฝึกคำซ้ำ")</p>
+              </section>
+
               <button onClick={startPractice} className="w-full bg-teal-500 py-6 rounded-2xl text-white font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-teal-400 transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)]">
                 Start Typing <Play className="w-4 h-4 fill-current" />
               </button>
@@ -224,7 +257,6 @@ const PracticePage = () => {
             <div className="w-full max-w-4xl z-10 flex-1 flex flex-col">
               <div className="flex justify-between items-end mb-20 text-white">
                 <div className="flex items-center gap-4">
-                  <div className="scale-75 origin-left"><Logo /></div>
                   <div className="px-3 py-1 bg-teal-500/20 text-teal-400 border border-teal-500/30 rounded-full text-xs font-bold uppercase tracking-widest flex items-center gap-2">
                     <Keyboard className="w-3 h-3" /> Practice Mode
                   </div>

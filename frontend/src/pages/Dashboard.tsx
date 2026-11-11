@@ -44,7 +44,7 @@ const Dashboard = () => {
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
-      <Sidebar role={user.role} initialCollapsed={true} />
+      <Sidebar role={user.role} initialCollapsed={false} />
       <div className="flex-1 min-w-0 p-8 md:p-12 overflow-y-auto">
 
       {/* Header */}

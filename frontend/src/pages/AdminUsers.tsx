@@ -62,7 +62,7 @@ const AdminUsers = () => {
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
-      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={false} />
       <div className="flex-1 min-w-0 flex flex-col relative p-12">
 
       {/* --- Main Content --- */}

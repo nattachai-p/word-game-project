@@ -17,3 +17,15 @@ export const query = async (text: string, params?: any[]) => {
     throw err;
   }
 };
+
+// สร้างตารางที่จำเป็นถ้ายังไม่มี (idempotent) — เรียกตอน start server
+export const ensureSchema = async () => {
+  await query(`
+    CREATE TABLE IF NOT EXISTS login_log (
+      id SERIAL PRIMARY KEY,
+      user_id INTEGER,
+      username TEXT,
+      logged_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    )
+  `);
+};

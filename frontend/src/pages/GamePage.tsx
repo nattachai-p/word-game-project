@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb, Target, BookOpen, Clock } from 'lucide-react';
+import { Trophy, Play, CheckCircle2, ArrowRight, RefreshCcw, User as UserIcon, Lightbulb, Target, BookOpen, Clock, Zap } from 'lucide-react';
 import api from '../api/axios';
-import Logo from '../components/Logo';
 import Sidebar from '../components/Sidebar';
 
 // ✅ Logic การใบ้คำ
@@ -40,7 +39,8 @@ const GamePage = () => {
   const [isFocusMode, setIsFocusMode] = useState(false);  // ✅ โหมด Focus
   const [focusCount, setFocusCount] = useState(0);         // ✅ จำนวนคำที่ Focus ไว้
   const [useFocus, setUseFocus] = useState(true);          // ✅ ผู้เล่นเลือกใช้ Focus หรือไม่
-  
+  const [skipAnim, setSkipAnim] = useState(false);         // ✅ โหมดเร็ว: ตอบถูกไปคำถัดไปทันที
+
   // Timer States
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [isTiming, setIsTiming] = useState(false);
@@ -171,9 +171,14 @@ const GamePage = () => {
     const isMatch = userInput.toLowerCase().trim() === words[currentIndex].eng.toLowerCase().trim();
 
     if (isMatch) {
-      setFeedback('correct');
       setIsTiming(false); // Stop the timer when correct
       syncPoints(10); // 🚀 ตอบถูก ยิงเซฟ +10
+      // ⚡ โหมดเร็ว: ข้าม Correct Spelling/ตัวอย่าง ไปคำถัดไปทันที
+      if (skipAnim) {
+        nextWord();
+        return;
+      }
+      setFeedback('correct');
       setTimeout(() => {
         setFeedback('none');
         setShowExample(true);
@@ -222,7 +227,7 @@ const GamePage = () => {
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
       
       {/* ✅ เปิดให้ทุกคนเห็น Sidebar และบังคับย่อ */}
-      <Sidebar role={user.role} initialCollapsed={true} />
+      <Sidebar role={user.role} initialCollapsed={false} />
 
       <main className={`flex-1 relative transition-colors duration-500 overflow-hidden flex flex-col items-center justify-center
         ${step !== 'select' && feedback === 'wrong' ? 'bg-red-950' : ''}
@@ -233,7 +238,9 @@ const GamePage = () => {
         {step === 'select' && (
           <div className="flex flex-col items-center p-6 text-center w-full max-w-4xl">
             <div className="w-full flex justify-between items-center mb-10 border-b border-white/5 pb-6">
-              <Logo />
+              <h1 className="text-3xl font-black italic tracking-tighter text-indigo-400 uppercase flex items-center gap-2">
+                <Play className="w-7 h-7 fill-current" /> Play Game
+              </h1>
               <div className="flex items-center gap-4 text-right">
                 <div>
                   <p className="text-[10px] text-slate-500 tracking-widest uppercase font-bold">Welcome,</p>
@@ -306,6 +313,16 @@ const GamePage = () => {
                 </div>
               </section>
 
+              {/* ✅ Options: โหมดเร็ว */}
+              <section>
+                <p className="text-indigo-500 text-[10px] tracking-[0.4em] uppercase font-black mb-6">Options</p>
+                <div className="flex items-center justify-center">
+                  <button onClick={() => setSkipAnim(v => !v)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${skipAnim ? 'bg-indigo-600 border-indigo-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>
+                    <Zap className="w-4 h-4" /> โหมดเร็ว (ตอบถูกไปคำถัดไปทันที)
+                  </button>
+                </div>
+              </section>
+
               <button onClick={startStore} className="w-full bg-white py-6 rounded-2xl text-black font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-indigo-500 hover:text-white transition-all">
                 Start Session <Play className="w-4 h-4 fill-current" />
               </button>
@@ -336,7 +353,6 @@ const GamePage = () => {
             <div className="w-full max-w-4xl z-10 flex-1 flex flex-col">
               <div className="flex justify-between items-end mb-20 text-white">
                 <div className="flex items-center gap-4">
-                  <div className="scale-75 origin-left"><Logo /></div>
                   {/* ✅ Focus Mode Badge — แสดงเฉพาะตอนเล่นในโหมด Focus */}
                   {isFocusMode && (
                     <motion.div

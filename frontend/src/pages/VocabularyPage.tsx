@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   BookOpen, Search, CheckSquare, Square, ChevronLeft, ChevronRight,
-  Target, X, Filter, Layers, ArrowLeft, Loader2, Star
+  Target, X, Filter, Layers, Loader2, Star
 } from 'lucide-react';
 import api from '../api/axios';
 import Sidebar from '../components/Sidebar';
@@ -21,7 +20,6 @@ interface Word {
 
 // ─── VocabularyPage ───────────────────────────────────────────────────────────
 const VocabularyPage = () => {
-  const navigate = useNavigate();
 
   // ── Data States ──
   // rawWords = ข้อมูลดิบจาก API (ไม่ถูก filter ด้วย focus)
@@ -164,23 +162,15 @@ const VocabularyPage = () => {
   // ─── Render ───────────────────────────────────────────────────────────────
   return (
     <div className="flex min-h-screen bg-[#050505] text-white font-['Inter']">
-      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={false} />
       <div className="flex-1 min-w-0">
 
       {/* ── Header ── */}
       <div className="sticky top-0 z-30 bg-[#050505]/90 backdrop-blur-xl border-b border-white/5">
         <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/game')}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all font-bold text-sm"
-            >
-              <ArrowLeft className="w-4 h-4" /> Back
-            </button>
-            <div className="flex items-center gap-3">
-              <BookOpen className="w-6 h-6 text-indigo-400" />
-              <h1 className="text-xl font-black uppercase tracking-widest">Vocabulary</h1>
-            </div>
+          <div className="flex items-center gap-3">
+            <BookOpen className="w-6 h-6 text-indigo-400" />
+            <h1 className="text-xl font-black uppercase tracking-widest">Vocabulary</h1>
           </div>
 
           {/* Focus counter pill — อัปเดต smooth ไม่กระโดด */}

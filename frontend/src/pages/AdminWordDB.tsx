@@ -4,6 +4,7 @@ import api from '../api/axios';
 import Sidebar from '../components/Sidebar';
 
 const AdminWordDB = () => {
+  const isAdmin = localStorage.getItem('role') === 'admin'; // ✅ Random by AI เฉพาะ admin
   const [words, setWords] = useState<any[]>([]);
   const [inputWord, setInputWord] = useState('');
   const [topic, setTopic] = useState(''); // เคลียร์เป็นค่าว่างให้สุ่มอิสระ
@@ -103,7 +104,7 @@ const AdminWordDB = () => {
 
   return (
     <div className="flex min-h-screen bg-[#050505] text-slate-200 font-['Inter']">
-      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={true} />
+      <Sidebar role={localStorage.getItem('role') || undefined} initialCollapsed={false} />
       <div className="flex-1 min-w-0 p-8 relative">
 
       <div className="max-w-7xl mx-auto mt-16">
@@ -193,15 +194,21 @@ const AdminWordDB = () => {
             </div>
           </div>
 
-          <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
-            <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-3">Random by AI Topic</label>
-            <div className="flex gap-2">
-              <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic: Anything " className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-500" />
-              <button onClick={handleRandom} disabled={loading} className="bg-purple-600 hover:bg-purple-500 px-6 rounded-xl font-bold disabled:opacity-50 text-white">
-                {loading ? <Loader2 className="animate-spin" /> : "GENERATE"}
-              </button>
+          {isAdmin ? (
+            <div className="bg-[#111] border border-white/5 p-6 rounded-2xl">
+              <label className="text-[10px] text-slate-500 font-bold uppercase tracking-widest block mb-3">Random by AI Topic</label>
+              <div className="flex gap-2">
+                <input value={topic} onChange={(e) => setTopic(e.target.value)} placeholder="Topic: Anything " className="flex-1 bg-black border border-white/10 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-purple-500" />
+                <button onClick={handleRandom} disabled={loading} className="bg-purple-600 hover:bg-purple-500 px-6 rounded-xl font-bold disabled:opacity-50 text-white">
+                  {loading ? <Loader2 className="animate-spin" /> : "GENERATE"}
+                </button>
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="bg-[#111] border border-white/5 p-6 rounded-2xl flex items-center justify-center text-center">
+              <p className="text-xs text-slate-600">Random by AI Topic — สำหรับผู้ดูแลระบบ (Admin) เท่านั้น</p>
+            </div>
+          )}
         </div>
 
         {/* Preview Table */}

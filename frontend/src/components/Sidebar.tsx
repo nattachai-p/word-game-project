@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Gamepad2, Database, Users, LogOut, BarChart3, ChevronLeft, ChevronRight, BookOpen, Keyboard } from 'lucide-react';
+import { Gamepad2, Database, Users, LogOut, BarChart3, ChevronLeft, ChevronRight, BookOpen, Keyboard, History } from 'lucide-react';
 
 const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCollapsed?: boolean }) => {
   const location = useLocation();
@@ -37,10 +37,14 @@ const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCol
       
       <nav className="flex-1 px-4 space-y-2 mt-4 overflow-hidden">
 
-        {/* ✅ Tab เล่นเกม — อยู่บนสุดเสมอ */}
         <Link to="/game" title="Play Game" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/game') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
           <Gamepad2 className="w-5 h-5 min-w-[20px]" />
           {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Play Game</span>}
+        </Link>
+
+        <Link to="/practice" title="Practice Mode" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/practice') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
+          <Keyboard className="w-5 h-5 min-w-[20px]" />
+          {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Practice Mode</span>}
         </Link>
 
         <Link to="/dashboard" title="Dashboard" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/dashboard') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
@@ -53,12 +57,6 @@ const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCol
           {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Vocabulary</span>}
         </Link>
 
-        {/* ✅ ลิงก์โหมดฝึกพิมพ์ (Practice) */}
-        <Link to="/practice" title="Practice Mode" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/practice') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
-          <Keyboard className="w-5 h-5 min-w-[20px]" />
-          {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Practice Mode</span>}
-        </Link>
-
         <Link to="/admin/word-db" title="Word Database" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/admin/word-db') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
           <Database className="w-5 h-5 min-w-[20px]" />
           {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Word Database</span>}
@@ -68,6 +66,13 @@ const Sidebar = ({ role, initialCollapsed = false }: { role?: string, initialCol
           <Link to="/admin/users" title="User Management" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/admin/users') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
             <Users className="w-5 h-5 min-w-[20px]" />
             {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">User Management</span>}
+          </Link>
+        )}
+
+        {role === 'admin' && (
+          <Link to="/admin/log" title="Log" className={`flex items-center gap-3 py-3 rounded-xl transition-all ${isActive('/admin/log') ? 'bg-indigo-600/20 text-indigo-400' : 'text-slate-500 hover:bg-white/5 hover:text-white'} ${isCollapsed ? 'justify-center px-0' : 'px-4'}`}>
+            <History className="w-5 h-5 min-w-[20px]" />
+            {!isCollapsed && <span className="font-bold tracking-wide text-sm whitespace-nowrap">Log</span>}
           </Link>
         )}
       </nav>

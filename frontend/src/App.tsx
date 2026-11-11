@@ -7,6 +7,7 @@ import AdminWordDB from './pages/AdminWordDB'; // 3. Import หน้า Admin W
 import Dashboard from './pages/Dashboard';
 import VocabularyPage from './pages/VocabularyPage';
 import PracticePage from './pages/PracticePage'; // 5. Import หน้า Practice เข้ามา
+import LogPage from './pages/LogPage';
 import { ProtectedRoute, AdminRoute } from './components/ProtectedRoute';
 
 
@@ -32,6 +33,7 @@ function App() {
 
         {/* หน้าเฉพาะ Admin เท่านั้น */}
         <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+        <Route path="/admin/log" element={<AdminRoute><LogPage /></AdminRoute>} />
 
         {/* กันหลงทาง: path แปลก ๆ เด้งกลับ login */}
         <Route path="*" element={<Navigate to="/login" replace />} />

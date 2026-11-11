@@ -57,11 +57,15 @@ router.post('/login', authLimiter, async (req: Request, res: Response) => {
 
     const token = jwt.sign({ userId: user.id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
 
+    // บันทึก log การ login ทุกครั้ง (fire-and-forget — ไม่ให้กระทบการ login ถ้า log พลาด)
+    query('INSERT INTO login_log (user_id, username) VALUES ($1, $2)', [user.id, user.username])
+      .catch((e) => console.error('login_log insert failed:', e));
+
     res.json({
       message: 'Login successful',
       token,
       role: user.role,
-      user: { id: user.id, username: user.username } 
+      user: { id: user.id, username: user.username }
     });
   } catch (err) {
     res.status(500).json({ error: 'Login failed' });
@@ -235,6 +239,39 @@ router.post('/update-points', authenticateToken, async (req: any, res: Response)
   } catch (err) {
     console.error('Update points error:', err);
     res.status(500).json({ error: 'Failed to update points' });
+  }
+});
+
+// ─── Log: ประวัติการ login (admin เท่านั้น) ───
+router.get('/logs', authenticateToken, isAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT id, user_id, username, logged_at
+       FROM login_log
+       ORDER BY logged_at DESC
+       LIMIT 300`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('GET /logs error:', err);
+    res.status(500).json({ error: 'Failed to fetch logs' });
+  }
+});
+
+// ─── Log: สรุปจำนวน login รายเดือน แยกราย user (admin) ───
+// frontend เอาไปรวมเป็นภาพรวม หรือกรองราย user เองได้
+router.get('/logs/monthly', authenticateToken, isAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT to_char(logged_at, 'YYYY-MM') AS month, username, COUNT(*)::int AS count
+       FROM login_log
+       GROUP BY month, username
+       ORDER BY month ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('GET /logs/monthly error:', err);
+    res.status(500).json({ error: 'Failed to fetch monthly logs' });
   }
 });
 

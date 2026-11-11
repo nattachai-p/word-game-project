@@ -124,18 +124,17 @@ const PracticePage = () => {
     }
   };
 
-  // เล่นต่อเนื่องไม่รู้จบ: จบชุด → วนชุดเดิม (repeat) หรือดึงชุดใหม่
+  // ไปคำถัดไป — แต่ถ้าเปิด "ฝึกคำซ้ำ" ให้อยู่คำเดิม (ย้ำคำนั้นซ้ำ ๆ)
+  // เล่นต่อเนื่องไม่รู้จบ: จบชุดแล้วดึงชุดใหม่อัตโนมัติ
   const nextWord = async () => {
     setFeedback('none');
     setShowExample(false);
     setUserInput('');
 
+    if (repeatMode) return; // 🔁 ฝึกคำซ้ำ: อยู่คำเดิม ไม่เลื่อน
+
     if (currentIndex < words.length - 1) {
       setCurrentIndex(currentIndex + 1);
-      return;
-    }
-    if (repeatMode) {
-      setCurrentIndex(0); // ฝึกคำซ้ำ: วนชุดเดิม
       return;
     }
     try {
@@ -218,19 +217,7 @@ const PracticePage = () => {
                 )}
               </section>
 
-              {/* ✅ Options: ฝึกคำซ้ำ / โหมดเร็ว */}
-              <section>
-                <p className="text-teal-500 text-[10px] tracking-[0.4em] uppercase font-black mb-6">Options</p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  <button onClick={() => setRepeatMode(v => !v)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${repeatMode ? 'bg-teal-500 border-teal-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>
-                    <Repeat className="w-4 h-4" /> ฝึกคำซ้ำ (วนชุดเดิม)
-                  </button>
-                  <button onClick={() => setSkipAnim(v => !v)} className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border text-sm font-bold transition-all ${skipAnim ? 'bg-teal-500 border-teal-400 text-white' : 'border-white/10 text-slate-500 hover:text-white'}`}>
-                    <Zap className="w-4 h-4" /> โหมดเร็ว (ข้ามแอนิเมชัน)
-                  </button>
-                </div>
-                <p className="text-slate-600 text-xs mt-4">เล่นต่อเนื่องไม่รู้จบ — จบชุดแล้วสุ่มคำใหม่อัตโนมัติ (หรือวนชุดเดิมถ้าเปิด "ฝึกคำซ้ำ")</p>
-              </section>
+              <p className="text-slate-600 text-xs">เล่นต่อเนื่องไม่รู้จบ — จบชุดแล้วสุ่มคำใหม่อัตโนมัติ · ปุ่ม "ฝึกคำซ้ำ" และ "โหมดเร็ว" เปิด-ปิดได้ระหว่างเล่น</p>
 
               <button onClick={startPractice} className="w-full bg-teal-500 py-6 rounded-2xl text-white font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-teal-400 transition-all shadow-[0_0_20px_rgba(20,184,166,0.3)]">
                 Start Typing <Play className="w-4 h-4 fill-current" />
@@ -266,6 +253,14 @@ const PracticePage = () => {
                       <span className="text-indigo-300 text-[10px] font-bold uppercase tracking-wider">Focus Mode</span>
                     </div>
                   )}
+
+                  {/* ✅ Toggle สด ระหว่างเล่น */}
+                  <button onClick={() => setRepeatMode(v => !v)} title="ฝึกคำซ้ำ: ตอบถูกแล้วอยู่คำเดิม ย้ำซ้ำ ๆ" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-all ${repeatMode ? 'bg-teal-500/20 border-teal-500/40 text-teal-300' : 'border-white/10 text-slate-500 hover:text-white'}`}>
+                    <Repeat className="w-3 h-3" /> ฝึกคำซ้ำ
+                  </button>
+                  <button onClick={() => setSkipAnim(v => !v)} title="โหมดเร็ว: ตอบถูกไปคำถัดไปทันที" className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[10px] font-bold uppercase tracking-wider transition-all ${skipAnim ? 'bg-teal-500/20 border-teal-500/40 text-teal-300' : 'border-white/10 text-slate-500 hover:text-white'}`}>
+                    <Zap className="w-3 h-3" /> โหมดเร็ว
+                  </button>
                 </div>
                 
                 <div className="flex gap-8 text-right">

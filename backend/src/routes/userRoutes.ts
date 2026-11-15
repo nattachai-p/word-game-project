@@ -275,4 +275,21 @@ router.get('/logs/monthly', authenticateToken, isAdmin, async (_req: Request, re
   }
 });
 
+// ─── Log: สรุปจำนวน login รายวัน (ย้อนหลัง 60 วัน) แยกราย user (admin) ───
+router.get('/logs/daily', authenticateToken, isAdmin, async (_req: Request, res: Response) => {
+  try {
+    const result = await query(
+      `SELECT to_char(logged_at, 'YYYY-MM-DD') AS day, username, COUNT(*)::int AS count
+       FROM login_log
+       WHERE logged_at >= now() - interval '60 days'
+       GROUP BY day, username
+       ORDER BY day ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error('GET /logs/daily error:', err);
+    res.status(500).json({ error: 'Failed to fetch daily logs' });
+  }
+});
+
 export default router;
